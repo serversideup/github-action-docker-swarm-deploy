@@ -41,16 +41,6 @@ runs:
       run: NOW=$(date +%s)
       shell: bash
 
-    - name: Debug SSH command
-      run: |
-        ls -al ~
-        ls -al ~/.ssh/
-        cat ~/.ssh/known_hosts
-        ssh -vvvv -p ${{ inputs.remote_ssh_port }} ${{ inputs.remote_ssh_deployment_user }}@${{ inputs.remote_ssh_server }} cat /etc/hostname
-      shell: bash
-      env:
-        SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-
     - name: Run the Docker Swarm deployment
       run: |
         docker --log-level debug -H ssh://${{ inputs.remote_ssh_deployment_user }}@${{ inputs.remote_ssh_server }}:${{ inputs.remote_ssh_port }} \
