@@ -27,12 +27,12 @@ runs:
 
     - name: Add SSH key
       run: |
-        eval $(ssh-agent -s)
-        echo "${{ inputs.deployment_ssh_private_key }}" | tr -d '\r' | ssh-add -
         mkdir -p ~/.ssh
         chmod 700 ~/.ssh
         echo "${{ inputs.remote_ssh_known_hosts }}" >> ~/.ssh/known_hosts
         chmod 644 ~/.ssh/known_hosts
+        ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+        echo "${{ inputs.deployment_ssh_private_key }}" | tr -d '\r' | ssh-add -
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       shell: bash
