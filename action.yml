@@ -4,7 +4,7 @@ inputs:
   deployment_ssh_private_key:
     description: 'The private key you have authenticated to connect to your server via SSH.'
     required: true
-  remote_ssh_known_host:
+  remote_ssh_known_hosts:
     description: 'The public key of your SSH server to validate we are connecting to the right server.'
     required: true
   remote_ssh_deployment_user:
@@ -21,59 +21,24 @@ runs:
   using: 'composite'
   steps:
 
-      ##
-      ## Run ssh-agent (inside the build environment)
-      ##
-      - name: Configure SSH environment
-        run: eval $(ssh-agent -s)
-        shell: bash
+    - name: Install SSH key
+      uses: shimataro/ssh-key-action@v2
+      with:
+        key: ${{ inputs.deployment_ssh_private_key }}
+        known_hosts: ${{ inputs.remote_ssh_known_hosts }}
 
-      ##
-      ## Add the SSH key stored in DEPLOYMENT_SSH_PRIVATE_KEY variable to the agent store
-      ## We're using tr to fix line endings which makes ed25519 keys work
-      ## without extra base64 encoding.
-      ## https://gitlab.com/gitlab-examples/ssh-private-key/issues/1#note_48526556
-      ##
-      - name: Add SSH key to environment
-        run: echo "${{ inputs.deployment_ssh_private_key }}" | tr -d '\r' | ssh-add -
-        shell: bash
+    - name: Set the current time to the "NOW" variable
+      run: NOW=$(date +%s)
+      shell: bash
 
-      ##
-      ## Create the SSH directory and give it the right permissions
-      ##
-      - name: Prepare SSH configuration
-        run: | 
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-        shell: bash
-
-      ##
-      ## Add the known host value for the remote machine (prevent MITM attacks)
-      ##
-      - name: Configure known host for the remote machine
-        run: | 
-          echo "${{ inputs.remote_ssh_known_host }}" >> ~/.ssh/known_hosts
-          chmod 644 ~/.ssh/known_hosts
-        shell: bash
-
-      ##
-      ## Store the time for any priority usage.
-      ##
-      - name: Set the current time to the "NOW" variable
-        run: NOW=$(date +%s)
-        shell: bash
-
-      ##
-      ## Run the deployment
-      ##
-      - name: Run the Docker Swarm deployment
-        run: |
-          docker -H \
-            ssh://${{ inputs.remote_ssh_deployment_user }}@${{ inputs.remote_ssh_server }}:${{ inputs.remote_ssh_port }} \
-            stack deploy --with-registry-auth \
-            --compose-file docker-compose.yml -c docker-compose.prod.yml \
-            ${GITHUB_REPOSITORY#*/} --prune
-        shell: bash
+    - name: Run the Docker Swarm deployment
+      run: |
+        docker -H \
+          ssh://${{ inputs.remote_ssh_deployment_user }}@${{ inputs.remote_ssh_server }}:${{ inputs.remote_ssh_port }} \
+          stack deploy --with-registry-auth \
+          --compose-file docker-compose.yml -c docker-compose.prod.yml \
+          ${GITHUB_REPOSITORY#*/} --prune
+      shell: bash
 
 branding:
   icon: 'zap'
