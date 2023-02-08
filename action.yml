@@ -21,6 +21,9 @@ inputs:
     description: 'Set your docker compose file path with the CLI options.'
     default: '-c docker-compose.yml -c docker-compose.prod.yml'
     required: false
+  ssh_key_id:
+    description: 'Set your key type/id (id_ed25519, id_rsa, etc)'
+    default: 'id_ed25519'
 runs:
   using: 'composite'
   steps:
@@ -28,6 +31,7 @@ runs:
     - name: Install SSH key
       uses: shimataro/ssh-key-action@v2
       with:
+        name: ${{ inputs.ssh_key_id }}
         key: ${{ inputs.deployment_ssh_private_key }}
         known_hosts: ${{ inputs.remote_ssh_known_hosts }}
 
