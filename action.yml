@@ -31,6 +31,7 @@ runs:
         name: ${{ inputs.ssh_key_id }}
         key: ${{ inputs.deployment_ssh_private_key }}
         known_hosts: ${{ inputs.remote_ssh_known_hosts }}
+        if_key_exists: replace
 
     - name: Set the current time to the "NOW" variable
       run: NOW=$(date +%s)
