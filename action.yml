@@ -25,13 +25,16 @@ runs:
   using: 'composite'
   steps:
 
-    - name: Install SSH key
-      uses: shimataro/ssh-key-action@v2
-      with:
-        name: ${{ inputs.ssh_key_id }}
-        key: ${{ inputs.deployment_ssh_private_key }}
-        known_hosts: ${{ inputs.remote_ssh_known_hosts }}
-        if_key_exists: replace
+    - name: Add SSH key
+      run: |
+        eval $(ssh-agent -s)
+        echo "${{ inputs.deployment_ssh_private_key }}" | tr -d '\r' | ssh-add -
+        mkdir -p ~/.ssh
+        chmod 700 ~/.ssh
+        echo "${{ inputs.remote_ssh_known_hosts }}" >> ~/.ssh/known_hosts
+        chmod 644 ~/.ssh/known_hosts
+      env:
+        SSH_AUTH_SOCK: /tmp/ssh_agent.sock
 
     - name: Set the current time to the "NOW" variable
       run: NOW=$(date +%s)
@@ -44,6 +47,8 @@ runs:
           ${{ inputs.docker_compose_file_path }} \
           ${GITHUB_REPOSITORY#*/} --prune
       shell: bash
+      env:
+        SSH_AUTH_SOCK: /tmp/ssh_agent.sock
 
 branding:
   icon: 'zap'
