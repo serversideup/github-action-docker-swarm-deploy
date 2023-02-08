@@ -37,7 +37,7 @@ runs:
     
     - name: Debug SSH command
       run: |
-        ssh -p ${{ inputs.remote_ssh_port }} ${{ inputs.remote_ssh_deployment_user }}@${{ inputs.remote_ssh_server }} cat /etc/hostname
+        ssh -vvvv -p ${{ inputs.remote_ssh_port }} ${{ inputs.remote_ssh_deployment_user }}@${{ inputs.remote_ssh_server }} cat /etc/hostname
       shell: bash
 
     - name: Run the Docker Swarm deployment
