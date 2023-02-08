@@ -34,10 +34,6 @@ runs:
         name: ${{ inputs.ssh_key_id }}
         key: ${{ inputs.deployment_ssh_private_key }}
         known_hosts: ${{ inputs.remote_ssh_known_hosts }}
-     
-    - name: Show loaded keys.
-      run: ssh-add -L
-      shell: bash
 
     - name: Set the current time to the "NOW" variable
       run: NOW=$(date +%s)
