@@ -35,7 +35,8 @@ runs:
         chmod 644 ~/.ssh/known_hosts
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-
+      shell: bash
+      
     - name: Set the current time to the "NOW" variable
       run: NOW=$(date +%s)
       shell: bash
