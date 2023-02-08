@@ -21,9 +21,6 @@ inputs:
     description: 'Set your docker compose file path with the CLI options.'
     default: '-c docker-compose.yml -c docker-compose.prod.yml'
     required: false
-  ssh_key_id:
-    description: 'Set your key type/id (id_ed25519, id_rsa, etc)'
-    default: 'id_ed25519'
 runs:
   using: 'composite'
   steps:
@@ -37,11 +34,6 @@ runs:
 
     - name: Set the current time to the "NOW" variable
       run: NOW=$(date +%s)
-      shell: bash
-    
-    - name: Debug SSH command
-      run: |
-        ssh -vvvv -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p ${{ inputs.remote_ssh_port }} ${{ inputs.remote_ssh_deployment_user }}@${{ inputs.remote_ssh_server }} cat /etc/hostname
       shell: bash
 
     - name: Run the Docker Swarm deployment
