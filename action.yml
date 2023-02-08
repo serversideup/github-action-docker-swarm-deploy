@@ -17,6 +17,10 @@ inputs:
     description: 'The SSH port of the remote server you would like to connect to.'
     default: '22'
     required: false
+  docker_compose_file_path:
+    description: 'Set your docker compose file path with the CLI options.'
+    default: '-c docker-compose.yml -c docker-compose.prod.yml'
+    required: false
 runs:
   using: 'composite'
   steps:
@@ -25,7 +29,7 @@ runs:
       uses: shimataro/ssh-key-action@v2
       with:
         key: ${{ inputs.deployment_ssh_private_key }}
-        known_hosts: ${{ inputs.remote_ssh_known_hosts }}
+        known_hosts: unnecessary
 
     - name: Set the current time to the "NOW" variable
       run: NOW=$(date +%s)
@@ -36,7 +40,7 @@ runs:
         docker -H \
           ssh://${{ inputs.remote_ssh_deployment_user }}@${{ inputs.remote_ssh_server }}:${{ inputs.remote_ssh_port }} \
           stack deploy --with-registry-auth \
-          --compose-file docker-compose.yml -c docker-compose.prod.yml \
+          ${{ inputs.docker_compose_file_path }} \
           ${GITHUB_REPOSITORY#*/} --prune
       shell: bash
 
