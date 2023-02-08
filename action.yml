@@ -17,10 +17,6 @@ inputs:
     description: 'The SSH port of the remote server you would like to connect to.'
     default: '22'
     required: false
-  project_name:
-    description: 'The name of the project you would like to use.'
-    default: 'swarm-app'
-    required: false
 runs:
   using: 'composite'
   steps:
@@ -76,7 +72,7 @@ runs:
             ssh://${{ inputs.remote_ssh_deployment_user }}@${{ inputs.remote_ssh_server }}:${{ inputs.remote_ssh_port }} \
             stack deploy --with-registry-auth \
             --compose-file docker-compose.yml -c docker-compose.prod.yml \
-            ${{ inputs.project_name }} --prune
+            ${GITHUB_REPOSITORY#*/} --prune
         shell: bash
 
 branding:
