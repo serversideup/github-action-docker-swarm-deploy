@@ -1,52 +1,91 @@
 name: 'docker-swarm-deploy-github-action'
 description: 'Deploy your Docker Swarm apps in seconds. 🚀'
 inputs:
+  docker_compose_file_path:
+    description: 'Set your docker compose file path with the CLI options.'
+    default: '-c docker-compose.yml -c docker-compose.prod.yml'
+    required: false
+  deployment_image:
+    description: 'The Docker Image to deploy.'
+    required: false
   deployment_ssh_private_key:
     description: 'The private key you have authenticated to connect to your server via SSH.'
     required: true
   remote_ssh_known_hosts:
     description: 'The public key of your SSH server to validate we are connecting to the right server.'
+    default: "${{ secrets.REMOTE_SSH_KNOWN_HOSTS }}"
     required: true
   remote_ssh_deployment_user:
     description: 'The user that you would like to connect as on the remote server via SSH.'
+    default: 'deploy'
     required: true
-  remote_ssh_server:
+  remote_ssh_server_hostname:
     description: 'The hostname or IP address of the server you want to connect to.'
     required: true
   remote_ssh_port:
     description: 'The SSH port of the remote server you would like to connect to.'
     default: '22'
     required: false
-  docker_compose_file_path:
-    description: 'Set your docker compose file path with the CLI options.'
-    default: '-c docker-compose.yml -c docker-compose.prod.yml'
+  registry:
+    description: 'Comma-separated list of container registries to authenticate with (e.g., "docker.io,ghcr.io").'
+    default: 'docker.io' # Default to Docker Hub if not specified
     required: false
+
 runs:
   using: 'composite'
   steps:
 
-    - name: Add SSH key
+    - name: Prepare SSH configuration.
       run: |
         mkdir -p ~/.ssh
         chmod 700 ~/.ssh
+
+    - name: Use predefined SSH known hosts (if available).
+      if: ${{ inputs.remote_ssh_known_hosts }} != ''
+      run: |
         echo "${{ inputs.remote_ssh_known_hosts }}" >> ~/.ssh/known_hosts
         chmod 644 ~/.ssh/known_hosts
+      shell: bash
+
+    - name: Use SSH keyscan to get the public key of the remote server.
+      if: ${{ inputs.remote_ssh_known_hosts }} != ''
+      run: |
+        echo "::warning::You may want to set REMOTE_SSH_KNOWN_HOSTS as a GitHub Actions secret to improve deployment security."
+        ssh-keyscan -H ${{ inputs.remote_ssh_server_hostname }} >> ~/.ssh/known_hosts
+        chmod 644 ~/.ssh/known_hosts
+      shell: bash
+
+    - name: Add SSH key.
+      run: |
         ssh-agent -a $SSH_AUTH_SOCK > /dev/null
         echo "${{ inputs.deployment_ssh_private_key }}" | tr -d '\r' | ssh-add -
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       shell: bash
-      
-    - name: Set the current time to the "NOW" variable
-      run: NOW=$(date +%s)
-      shell: bash
 
-    - name: Run the Docker Swarm deployment
+    - name: Login to Docker Hub (if specified).
+      if: contains(inputs.registry, 'docker.io')
+      uses: docker/login-action@v3
+      with:
+        username: ${{ inputs.registry-username }}
+        password: ${{ inputs.registry-token }}
+        registry: docker.io
+
+    - name: Login to GitHub Container Registry (if specified).
+      if: contains(inputs.registry, 'ghcr.io')
+      uses: docker/login-action@v3
+      with:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        registry: ghcr.io
+
+    - name: Run Docker Stack deployment via SSH.
       run: |
         docker --log-level debug -H ssh://${{ inputs.remote_ssh_deployment_user }}@${{ inputs.remote_ssh_server }}:${{ inputs.remote_ssh_port }} \
           stack deploy --with-registry-auth \
           ${{ inputs.docker_compose_file_path }} \
-          ${GITHUB_REPOSITORY#*/} --prune
+          ${{ inputs.deploy_image }} \
+          --prune
       shell: bash
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
