@@ -36,6 +36,9 @@ inputs:
   registry-token:
     description: 'The token or password to use to authenticate with the container registry.'
     required: true
+  log_level:
+    description: 'The log level to use for the Docker CLI.'
+    default: 'debug'
 
 runs:
   using: 'composite'
@@ -45,6 +48,14 @@ runs:
       run: |
         mkdir -p ~/.ssh
         chmod 700 ~/.ssh
+      shell: bash
+
+    - name: Add SSH key.
+      run: |
+        ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+        echo "${{ inputs.deployment_ssh_private_key }}" | tr -d '\r' | ssh-add -
+      env:
+        SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       shell: bash
 
     - name: Use predefined SSH known hosts (if available).
@@ -60,14 +71,6 @@ runs:
         echo "::warning::You may want to set REMOTE_SSH_KNOWN_HOSTS as a GitHub Actions secret to improve security."
         ssh-keyscan -H ${{ inputs.remote_ssh_server_hostname }} >> ~/.ssh/known_hosts
         chmod 644 ~/.ssh/known_hosts
-      shell: bash
-
-    - name: Add SSH key.
-      run: |
-        ssh-agent -a $SSH_AUTH_SOCK > /dev/null
-        echo "${{ inputs.deployment_ssh_private_key }}" | tr -d '\r' | ssh-add -
-      env:
-        SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       shell: bash
 
     - name: Login to Docker Hub (if specified).
@@ -88,7 +91,7 @@ runs:
 
     - name: Run Docker Stack deployment via SSH.
       run: |
-        docker --log-level debug -H ssh://${{ inputs.remote_ssh_deployment_user }}@${{ inputs.remote_ssh_server }}:${{ inputs.remote_ssh_port }} \
+        docker --log-level ${{ inputs.log_level }} -H ssh://${{ inputs.remote_ssh_deployment_user }}@${{ inputs.remote_ssh_server }}:${{ inputs.remote_ssh_port }} \
           stack deploy --with-registry-auth \
           ${{ inputs.docker_compose_file_path }} \
           ${{ inputs.deploy_image }} \
