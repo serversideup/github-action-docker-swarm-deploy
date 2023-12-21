@@ -44,6 +44,7 @@ runs:
       run: |
         mkdir -p ~/.ssh
         chmod 700 ~/.ssh
+      shell: bash
 
     - name: Use predefined SSH known hosts (if available).
       if: ${{ inputs.remote_ssh_known_hosts }} != ''
