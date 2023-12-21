@@ -30,6 +30,12 @@ inputs:
     description: 'Comma-separated list of container registries to authenticate with (e.g., "docker.io,ghcr.io").'
     default: 'docker.io' # Default to Docker Hub if not specified
     required: false
+  registry-username:
+    description: 'The username to use to authenticate with the container registry.'
+    required: true
+  registry-token:
+    description: 'The token or password to use to authenticate with the container registry.'
+    required: true
 
 runs:
   using: 'composite'
@@ -75,8 +81,8 @@ runs:
       if: contains(inputs.registry, 'ghcr.io')
       uses: docker/login-action@v3
       with:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+        username: ${{ inputs.registry-username }}
+        password: ${{ inputs.registry-token }}
         registry: ghcr.io
 
     - name: Run Docker Stack deployment via SSH.

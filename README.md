@@ -54,6 +54,8 @@ Here is an example workflow:
 | remote_ssh_server_hostname  | The hostname or IP address of the server you want to connect to.                                     |                                          | ⚠️ true     |
 | remote_ssh_port             | The SSH port of the remote server you would like to connect to.                                      | `22`                                     | false    |
 | registry                    | Comma-separated list of container registries to authenticate with (e.g., "docker.io,ghcr.io").       | `docker.io` (Default to Docker Hub if not specified) | false    |
+| registry-username                    | The username to use to authenticate with the container registry.       |  | true   |
+| registry-token                    | The token or password to use to authenticate with the container registry.       |  | true   |
 
 
 ### Security Disclosures
