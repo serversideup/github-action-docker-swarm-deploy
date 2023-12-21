@@ -91,7 +91,7 @@ runs:
 
     - name: Run Docker Stack deployment via SSH.
       run: |
-        docker --log-level ${{ inputs.log_level }} -H ssh://${{ inputs.remote_ssh_deployment_user }}@${{ inputs.remote_ssh_server }}:${{ inputs.remote_ssh_port }} \
+        docker --log-level ${{ inputs.log_level }} -H ssh://${{ inputs.remote_ssh_deployment_user }}@${{ remote_ssh_server_hostname }}:${{ inputs.remote_ssh_port }} \
           stack deploy --with-registry-auth \
           ${{ inputs.docker_compose_file_path }} \
           ${{ inputs.deploy_image }} \
