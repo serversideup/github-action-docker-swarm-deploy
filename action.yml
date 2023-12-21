@@ -5,9 +5,9 @@ inputs:
     description: 'Set your docker compose file path with the CLI options.'
     default: '-c docker-compose.yml -c docker-compose.prod.yml'
     required: false
-  deployment_image:
-    description: 'The Docker Image to deploy.'
-    required: false
+  stack_name:
+    description: 'The name of your Docker stack.'
+    required: true
   deployment_ssh_private_key:
     description: 'The private key you have authenticated to connect to your server via SSH.'
     required: true
@@ -97,7 +97,7 @@ runs:
         docker --log-level ${{ inputs.log_level }} -H ssh://${{ inputs.remote_ssh_deployment_user }}@${{ inputs.remote_ssh_server_hostname }}:${{ inputs.remote_ssh_port }} \
           stack deploy --with-registry-auth \
           ${{ inputs.docker_compose_file_path }} \
-          ${{ inputs.deployment_image }} \
+          ${{ inputs.stack_name }} \
           --prune
       shell: bash
       env:

@@ -47,7 +47,7 @@ Here is an example workflow:
 | Parameter                   | Description                                                                                           | Default                                  | Required |
 |-----------------------------|-------------------------------------------------------------------------------------------------------|------------------------------------------|----------|
 | docker_compose_file_path    | Set your docker compose file path with the CLI options.                                               | `-c docker-compose.yml -c docker-compose.prod.yml` | false    |
-| deployment_image            | The Docker Image to deploy.                                                                           |                                    | false    |
+| stack_name           | The name of your docker stack.                                                                           |                                    | true    |
 | deployment_ssh_private_key  | The private key you have authenticated to connect to your server via SSH.                            |                                          | ⚠️ true     |
 | remote_ssh_known_hosts      | The public key of your SSH server to validate we are connecting to the right server.                  |  | ⚠️ true     |
 | remote_ssh_deployment_user  | The user that you would like to connect as on the remote server via SSH.                             | `deploy`                                 | ⚠️ true     |
