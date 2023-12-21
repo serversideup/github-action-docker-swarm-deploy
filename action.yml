@@ -13,7 +13,8 @@ inputs:
     required: true
   remote_ssh_known_hosts:
     description: 'The public key of your SSH server to validate we are connecting to the right server.'
-    required: true
+    default: ''
+    required: false
   remote_ssh_deployment_user:
     description: 'The user that you would like to connect as on the remote server via SSH.'
     default: 'deploy'
@@ -47,16 +48,15 @@ runs:
       shell: bash
 
     - name: Use predefined SSH known hosts (if available).
-      if: ${{ inputs.remote_ssh_known_hosts }} != ''
+      if: ${{ inputs.remote_ssh_known_hosts }}
       run: |
         echo "${{ inputs.remote_ssh_known_hosts }}" >> ~/.ssh/known_hosts
         chmod 644 ~/.ssh/known_hosts
       shell: bash
 
     - name: Use SSH keyscan to get the public key of the remote server.
-      if: ${{ inputs.remote_ssh_known_hosts }} == ''
+      if: ${{ inputs.remote_ssh_known_hosts }} = ''
       run: |
-        echo "::warning::You may want to set REMOTE_SSH_KNOWN_HOSTS as a GitHub Actions secret to improve deployment security."
         ssh-keyscan -H ${{ inputs.remote_ssh_server_hostname }} >> ~/.ssh/known_hosts
         chmod 644 ~/.ssh/known_hosts
       shell: bash
