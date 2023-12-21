@@ -57,6 +57,7 @@ runs:
     - name: Use SSH keyscan to get the public key of the remote server.
       if: ${{ inputs.remote_ssh_known_hosts }} = ''
       run: |
+        echo "::warning::You may want to set REMOTE_SSH_KNOWN_HOSTS as a GitHub Actions secret to improve security."
         ssh-keyscan -H ${{ inputs.remote_ssh_server_hostname }} >> ~/.ssh/known_hosts
         chmod 644 ~/.ssh/known_hosts
       shell: bash
