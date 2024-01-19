@@ -72,7 +72,7 @@ runs:
       if: ${{ inputs.remote_ssh_known_hosts }} = ''
       run: |
         echo "::warning::You may want to set REMOTE_SSH_KNOWN_HOSTS as a GitHub Actions secret to improve security."
-        ssh-keyscan -H ${{ inputs.remote_ssh_server_hostname }} -p ${{inputs.remote_ssh_port}} >> ~/.ssh/known_hosts
+        ssh-keyscan -p ${{inputs.remote_ssh_port}} -H ${{ inputs.remote_ssh_server_hostname }} >> ~/.ssh/known_hosts
         chmod 644 ~/.ssh/known_hosts
       shell: bash
 
