@@ -76,21 +76,12 @@ runs:
         chmod 644 ~/.ssh/known_hosts
       shell: bash
 
-    - name: Login to Docker Hub (if specified).
-      if: contains(inputs.registry, 'docker.io')
+    - name: Login to registry. (${{ inputs.registry }})
       uses: docker/login-action@v3
       with:
         username: ${{ inputs.registry-username }}
         password: ${{ inputs.registry-token }}
-        registry: docker.io
-
-    - name: Login to GitHub Container Registry (if specified).
-      if: contains(inputs.registry, 'ghcr.io')
-      uses: docker/login-action@v3
-      with:
-        username: ${{ inputs.registry-username }}
-        password: ${{ inputs.registry-token }}
-        registry: ghcr.io
+        registry: ${{ inputs.registry }}
 
     - name: Run Docker Stack deployment via SSH.
       run: |
