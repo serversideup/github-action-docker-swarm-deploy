@@ -49,10 +49,10 @@ Here is an example workflow:
 | docker_compose_file_path    | Set your docker compose file path with the CLI options.                                               | `-c docker-compose.yml -c docker-compose.prod.yml` | false    |
 | stack_name           | The name of your docker stack.                                                                           |                                    | true    |
 | ssh_deploy_private_key  | The private key you have authenticated to connect to your server via SSH.                            |                                          | ⚠️ true     |
-| remote_ssh_known_hosts      | The public key of your SSH server to validate we are connecting to the right server.                  |  | ⚠️ true     |
-| remote_ssh_deployment_user  | The user that you would like to connect as on the remote server via SSH.                             | `deploy`                                 | ⚠️ true     |
-| remote_ssh_server_hostname  | The hostname or IP address of the server you want to connect to.                                     |                                          | ⚠️ true     |
-| remote_ssh_port             | The SSH port of the remote server you would like to connect to.                                      | `22`                                     | false    |
+| ssh_remote_known_hosts      | The public key of your SSH server to validate we are connecting to the right server.                  |  | ⚠️ true     |
+| ssh_deploy_user  | The user that you would like to connect as on the remote server via SSH.                             | `deploy`                                 | ⚠️ true     |
+| ssh_remote_hostname  | The hostname or IP address of the server you want to connect to.                                     |                                          | ⚠️ true     |
+| ssh_remote_port             | The SSH port of the remote server you would like to connect to.                                      | `22`                                     | false    |
 | registry                    | Comma-separated list of container registries to authenticate with (e.g., "docker.io,ghcr.io").       | `docker.io` (Default to Docker Hub if not specified) | false    |
 | registry-username                    | The username to use to authenticate with the container registry.       |  | true   |
 | registry-token                    | The token or password to use to authenticate with the container registry.       |  | true   |
