@@ -5,6 +5,14 @@ inputs:
     description: 'Set your docker compose file path with the CLI options.'
     default: '-c docker-compose.yml -c docker-compose.prod.yml'
     required: false
+  md5_file_path:
+    description: 'Set the path to the file you'd like to get the MD5 checksum for.'
+    default: ''
+    required: false
+  md5_variable_name:
+    description: 'Set the name of the variable to store the MD5 checksum in.'
+    default: 'MD5_CHECKSUM'
+    required: false
   stack_name:
     description: 'The name of your Docker stack.'
     required: true
@@ -46,6 +54,16 @@ runs:
 
     - name: Checkout
       uses: actions/checkout@v4
+    
+    - name: Set project name
+      run: |
+        echo "PROJECT_NAME=${GITHUB_REPOSITORY#*/}" >> $GITHUB_ENV
+    
+    - name: Set MD5 checksum (if provided)
+      if: ${{ inputs.md5_file_path }}
+      run: |
+        echo "${{ inputs.md5_variable_name }}=$(md5sum ${{ inputs.md5_file_path }} | awk '{ print $1 }')" >> $GITHUB_ENV
+      shell: bash
 
     - name: Prepare SSH configuration.
       run: |
