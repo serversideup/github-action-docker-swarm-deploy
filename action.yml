@@ -101,23 +101,34 @@ runs:
 
     - name: Check if .env file exists
       id: check_env
+      shell: bash
       run: |
         if [ -f .env ]; then
           echo "env_exists=true" >> $GITHUB_OUTPUT
+          echo ".env file exists"
         else
           echo "env_exists=false" >> $GITHUB_OUTPUT
+          echo ".env file does not exist"
         fi
-      shell: bash
 
     - name: Export .env to GITHUB_ENV
       if: steps.check_env.outputs.env_exists == 'true'
+      shell: bash
       run: |
+        echo "Starting .env export"
         while IFS= read -r line || [[ -n "$line" ]]; do
           if [[ $line != \#* ]] && [[ $line != '' ]]; then
+            echo "Exporting: $line"
             echo "$line" >> $GITHUB_ENV
           fi
         done < .env
+        echo "Finished .env export"
+
+    - name: Debug - Print Environment Variables
       shell: bash
+      run: |
+        echo "Printing all environment variables:"
+        env
 
     - name: Run Docker Stack deployment via SSH.
       run: |
