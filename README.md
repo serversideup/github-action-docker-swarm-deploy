@@ -40,23 +40,57 @@ This is a GitHub Action intended to simplify the development experience while de
 Here is an example workflow:
 
 ```yml
-# TBD
+name: Production Deployment
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: serversideup/github-action-docker-swarm-deploy@v2
+        with:
+          ssh_deploy_private_key: "${{ secrets.SSH_DEPLOY_PRIVATE_KEY }}"
+          ssh_remote_hostname: "${{ secrets.SSH_REMOTE_HOSTNAME }}"
+          registry: "ghcr.io"
+          registry-username: "${{ github.actor }}"
+          registry-token: "${{ secrets.GITHUB_TOKEN }}"
+          stack_name: "${{ env.PROJECT_NAME }}"
+          md5_file_path: "./.infrastructure/conf/traefik/prod/traefik.yml"
+          md5_variable_name: "SPIN_MD5_HASH_TRAEFIK_YML"
 ```
 ### Configuration options
 
-| Parameter                   | Description                                                                                           | Default                                  | Required |
-|-----------------------------|-------------------------------------------------------------------------------------------------------|------------------------------------------|----------|
-| docker_compose_file_path    | Set your docker compose file path with the CLI options.                                               | `-c docker-compose.yml -c docker-compose.prod.yml` | false    |
-| stack_name           | The name of your docker stack.                                                                           |                                    | true    |
-| ssh_deploy_private_key  | The private key you have authenticated to connect to your server via SSH.                            |                                          | ⚠️ true     |
-| ssh_remote_known_hosts      | The public key of your SSH server to validate we are connecting to the right server.                  |  | ⚠️ true     |
-| ssh_deploy_user  | The user that you would like to connect as on the remote server via SSH.                             | `deploy`                                 | ⚠️ true     |
-| ssh_remote_hostname  | The hostname or IP address of the server you want to connect to.                                     |                                          | ⚠️ true     |
-| ssh_remote_port             | The SSH port of the remote server you would like to connect to.                                      | `22`                                     | false    |
-| registry                    | Comma-separated list of container registries to authenticate with (e.g., "docker.io,ghcr.io").       | `docker.io` (Default to Docker Hub if not specified) | false    |
-| registry-username                    | The username to use to authenticate with the container registry.       |  | true   |
-| registry-token                    | The token or password to use to authenticate with the container registry.       |  | true   |
+| Parameter               | Description                                                                                     | Default                                                | Required                                |
+|-------------------------|-------------------------------------------------------------------------------------------------|--------------------------------------------------------|----------------------------------------|
+| docker_compose_file_path| Set your docker compose file path with the CLI options.                                         | `-c docker-compose.yml -c docker-compose.prod.yml`     | false                                  |
+| md5_file_path           | Set the path to the file you would like to get the MD5 checksum for.                            | `./path/to/my/file.txt`                                | false                                  |
+| md5_variable_name       | The name of the variable you would like to store the MD5 checksum in.                           | `MD5_CHECKSUM`                                         | (only if `md5_file_path` is provided)  |
+| registry                | Comma-separated list of container registries to authenticate with (e.g., "docker.io,ghcr.io").  | `docker.io` (Default to Docker Hub if not specified)   | false                                  |
+| registry-token          | The token or password to use to authenticate with the container registry.                       |                                                        | true                                   |
+| registry-username       | The username to use to authenticate with the container registry.                                |                                                        | true                                   |
+| ssh_deploy_private_key  | The private key you have authenticated to connect to your server via SSH.                       |                                                        | ⚠️ true                                |
+| ssh_deploy_user         | The user that you would like to connect as on the remote server via SSH.                        | `deploy`                                               | ⚠️ true                                |
+| ssh_remote_hostname     | The hostname or IP address of the server you want to connect to.                                |                                                        | ⚠️ true                                |
+| ssh_remote_known_hosts  | The public key of your SSH server to validate we are connecting to the right server.            |                                                        | ⚠️ true                                |
+| ssh_remote_port         | The SSH port of the remote server you would like to connect to.                                 | `22`                                                   | false                                  |
+| stack_name              | The name of your docker stack.                                                                  |                                                        | true                                   |
 
+### Getting the MD5 Checksum of a file
+We include an optional input to get the MD5 checksum of a file. This is useful if you're working with Docker Configs and you only want the service to update if the file has changed. You just need to set the following inputs (a full example is available at the top of this document):
+
+```yml
+steps:
+  - uses: serversideup/github-action-docker-swarm-deploy@v2
+    with:
+      md5_file_path: "./path/to/my/file.txt"
+      md5_variable_name: "MY_FILE_MD5"
+```
+
+This will store the MD5 checksum of the file at `./path/to/my/file.txt` in the environment variable `MY_FILE_MD5`.
 
 ### Security Disclosures
 If you find a security vulnerability, please let us know as soon as possible.
