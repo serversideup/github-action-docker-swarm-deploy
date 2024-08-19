@@ -55,8 +55,6 @@ runs:
     - name: Checkout
       uses: actions/checkout@v4
 
-
-     
     - name: Set MD5 checksum (if provided)
       if: ${{ inputs.md5_file_path }}
       run: |
@@ -98,23 +96,6 @@ runs:
         username: ${{ inputs.registry-username }}
         password: ${{ inputs.registry-token }}
         registry: ${{ inputs.registry }}
-
-    - name: Export .env to GITHUB_ENV
-      if: hashFiles('.env') != ''
-      run: |
-        echo "Exporting .env contents to GITHUB_ENV"
-        while IFS= read -r line || [[ -n "$line" ]]; do
-          if [[ $line != \#* ]] && [[ $line != '' ]]; then
-            echo "$line" >> $GITHUB_ENV
-          fi
-        done < .env
-      shell: bash
-
-    - name: Debug - Print Environment Variables
-      run: |
-        echo "Printing all environment variables:"
-        env
-      shell: bash
 
     - name: Run Docker Stack deployment via SSH.
       run: |
