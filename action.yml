@@ -6,7 +6,7 @@ inputs:
     default: '-c docker-compose.yml -c docker-compose.prod.yml'
     required: false
   md5_file_path:
-    description: 'Set the path to the file you'd like to get the MD5 checksum for.'
+    description: 'Set the path to the file you would like to get the MD5 checksum for.'
     default: ''
     required: false
   md5_variable_name:
