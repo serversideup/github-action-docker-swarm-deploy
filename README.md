@@ -35,6 +35,8 @@ This is a GitHub Action intended to simplify the development experience while de
 - 😃 Simple to use
 - 🏗️ Bring your own container + configuration
 - 💯 Replicate 100% of production from Development to CI to Deployment
+- 💪 Use with self-hosted registries
+- 🧮 Store MD5 hashes in environment variables for deployment
 
 # Usage
 Here is an example workflow:
