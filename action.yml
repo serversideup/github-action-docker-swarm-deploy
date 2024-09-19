@@ -105,23 +105,31 @@ runs:
     - name: Load .env file and set variables
       if: "${{ inputs.env_file_base64 != '' }}"
       run: |
-        echo "${{ inputs.env_file_base64 }}" > .env
+        echo "${{ inputs.env_file_base64 }}" | base64 -d > .env
         chmod 600 .env
+        echo "::debug::Contents of .env file:"
+        cat .env | sed 's/^/::debug::  /'
         while IFS= read -r line || [[ -n "$line" ]]; do
           if [[ $line =~ ^[A-Za-z_][A-Za-z0-9_]*= ]]; then
             key="${line%%=*}"
             value="${line#*=}"
             echo "::add-mask::$value"
             echo "$key=$value" >> $GITHUB_ENV
+            echo "::debug::Setting $key"
             
             # Set SPIN_APP_DOMAIN if not already set
             if [[ "$key" == "APP_URL" && -z "$SPIN_APP_DOMAIN" ]]; then
               SPIN_APP_DOMAIN=$(echo "$value" | sed -E 's#^https?://##')
               echo "SPIN_APP_DOMAIN=$SPIN_APP_DOMAIN" >> $GITHUB_ENV
               echo "::add-mask::$SPIN_APP_DOMAIN"
+              echo "::debug::Setting SPIN_APP_DOMAIN"
             fi
+          else
+            echo "::debug::Skipping line: $line"
           fi
         done < .env
+        echo "::debug::Environment variables set:"
+        env | sort | sed 's/^/::debug::  /'
       shell: bash
 
     - name: Debug - List available environment variables
