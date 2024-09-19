@@ -97,6 +97,30 @@ runs:
         password: ${{ inputs.registry-token }}
         registry: ${{ inputs.registry }}
 
+    - name: Load .env file and set variables (if provided)
+      if: ${{ secrets.ENV_FILE_BASE64 != '' }}
+      run: |
+        echo "${{ secrets.ENV_FILE_BASE64 }}" > .env
+        chmod 600 .env
+        while IFS= read -r line || [[ -n "$line" ]]; do
+          if [[ $line =~ ^[A-Za-z_][A-Za-z0-9_]*= ]]; then
+            key="${line%%=*}"
+            value="${line#*=}"
+            echo "::add-mask::$value"
+            echo "$key=$value" >> $GITHUB_ENV
+            
+            # Set SPIN_APP_DOMAIN if not already set
+            if [[ "$key" == "APP_URL" && -z "$SPIN_APP_DOMAIN" ]]; then
+              SPIN_APP_DOMAIN=$(echo "$value" | sed -E 's#^https?://##')
+              echo "SPIN_APP_DOMAIN=$SPIN_APP_DOMAIN" >> $GITHUB_ENV
+              echo "::add-mask::$SPIN_APP_DOMAIN"
+            fi
+          fi
+        done < .env
+      shell: bash
+      env:
+        ENV_FILE_BASE64: ${{ secrets.ENV_FILE_BASE64 }}
+
     - name: Run Docker Stack deployment via SSH.
       run: |
         docker --log-level ${{ inputs.log_level }} -H ssh://${{ inputs.ssh_deploy_user }}@${{ inputs.ssh_remote_hostname }}:${{ inputs.ssh_remote_port }} \
