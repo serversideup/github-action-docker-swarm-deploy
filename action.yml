@@ -61,7 +61,9 @@ runs:
     - name: Set MD5 checksum (if provided)
       if: ${{ inputs.md5_file_path }}
       run: |
-        echo "${{ inputs.md5_variable_name }}=$(md5sum ${{ inputs.md5_file_path }} | awk '{ print $1 }')" >> $GITHUB_ENV
+        MD5_VALUE=$(md5sum ${{ inputs.md5_file_path }} | awk '{ print $1 }')
+        echo "::add-mask::$MD5_VALUE"
+        echo "${{ inputs.md5_variable_name }}=$MD5_VALUE" >> $GITHUB_ENV
       shell: bash
 
     - name: Prepare SSH configuration.
