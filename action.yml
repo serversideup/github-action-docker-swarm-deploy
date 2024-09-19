@@ -61,7 +61,9 @@ runs:
     - name: Set MD5 checksum (if provided)
       if: ${{ inputs.md5_file_path }}
       run: |
-        echo "${{ inputs.md5_variable_name }}=$(md5sum ${{ inputs.md5_file_path }} | awk '{ print $1 }')" >> $GITHUB_ENV
+        MD5_VALUE=$(md5sum ${{ inputs.md5_file_path }} | awk '{ print $1 }')
+        echo "::add-mask::$MD5_VALUE"
+        echo "${{ inputs.md5_variable_name }}=$MD5_VALUE" >> $GITHUB_ENV
       shell: bash
 
     - name: Prepare SSH configuration.
@@ -103,28 +105,49 @@ runs:
     - name: Load .env file and set variables
       if: "${{ inputs.env_file_base64 != '' }}"
       run: |
-        echo "${{ inputs.env_file_base64 }}" > .env
+        echo "${{ inputs.env_file_base64 }}" | base64 -d > .env
         chmod 600 .env
+        if [[ "$ACTIONS_STEP_DEBUG" == "true" ]]; then
+          echo "::debug::Contents of .env file:"
+          cat .env | sed 's/^/::debug::  /'
+        fi
         while IFS= read -r line || [[ -n "$line" ]]; do
           if [[ $line =~ ^[A-Za-z_][A-Za-z0-9_]*= ]]; then
             key="${line%%=*}"
             value="${line#*=}"
             echo "::add-mask::$value"
             echo "$key=$value" >> $GITHUB_ENV
+            [[ "$ACTIONS_STEP_DEBUG" == "true" ]] && echo "::debug::Setting $key"
             
             # Set SPIN_APP_DOMAIN if not already set
             if [[ "$key" == "APP_URL" && -z "$SPIN_APP_DOMAIN" ]]; then
               SPIN_APP_DOMAIN=$(echo "$value" | sed -E 's#^https?://##')
               echo "SPIN_APP_DOMAIN=$SPIN_APP_DOMAIN" >> $GITHUB_ENV
               echo "::add-mask::$SPIN_APP_DOMAIN"
+              [[ "$ACTIONS_STEP_DEBUG" == "true" ]] && echo "::debug::Setting SPIN_APP_DOMAIN"
             fi
+          elif [[ "$ACTIONS_STEP_DEBUG" == "true" ]]; then
+            echo "::debug::Skipping line: $line"
           fi
         done < .env
+        if [[ "$ACTIONS_STEP_DEBUG" == "true" ]]; then
+          echo "::debug::Environment variables set:"
+          env | sort | sed 's/^/::debug::  /'
+        fi
+      shell: bash
+
+    - name: Debug - List available environment variables
+      if: ${{ env.ACTIONS_STEP_DEBUG == 'true' }}
+      run: |
+        echo "::debug::Available environment variables:"
+        env | cut -d= -f1 | sort | while read -r var; do
+          echo "::debug::  - $var"
+        done
       shell: bash
 
     - name: Run Docker Stack deployment via SSH.
       run: |
-        docker --log-level ${{ inputs.log_level }} -H ssh://${{ inputs.ssh_deploy_user }}@${{ inputs.ssh_remote_hostname }}:${{ inputs.ssh_remote_port }} \
+        docker --log-level ${{ env.ACTIONS_STEP_DEBUG == 'true' && 'debug' || inputs.log_level }} -H ssh://${{ inputs.ssh_deploy_user }}@${{ inputs.ssh_remote_hostname }}:${{ inputs.ssh_remote_port }} \
           stack deploy --detach=false --with-registry-auth \
           ${{ inputs.docker_compose_file_path }} \
           ${{ inputs.stack_name }} \
