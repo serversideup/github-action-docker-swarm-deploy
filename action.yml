@@ -47,6 +47,9 @@ inputs:
   log_level:
     description: 'The log level to use for the Docker CLI.'
     default: 'debug'
+  env_file_base64:
+    description: 'The base64 encoded .env file to load into the container.'
+    required: false
 
 runs:
   using: 'composite'
@@ -98,9 +101,9 @@ runs:
         registry: ${{ inputs.registry }}
 
     - name: Load .env file and set variables
-      if: "${{ secrets.ENV_FILE_BASE64 != '' }}"
+      if: "${{ inputs.env_file_base64 != '' }}"
       run: |
-        echo "${{ secrets.ENV_FILE_BASE64 }}" > .env
+        echo "${{ inputs.env_file_base64 }}" > .env
         chmod 600 .env
         while IFS= read -r line || [[ -n "$line" ]]; do
           if [[ $line =~ ^[A-Za-z_][A-Za-z0-9_]*= ]]; then
@@ -118,8 +121,6 @@ runs:
           fi
         done < .env
       shell: bash
-      env:
-        ENV_FILE_BASE64: ${{ secrets.ENV_FILE_BASE64 }}
 
     - name: Run Docker Stack deployment via SSH.
       run: |
