@@ -97,8 +97,8 @@ runs:
         password: ${{ inputs.registry-token }}
         registry: ${{ inputs.registry }}
 
-    - name: Load .env file and set variables (if provided)
-      if: ${{ secrets.ENV_FILE_BASE64 != '' }}
+    - name: Load .env file and set variables
+      if: "${{ secrets.ENV_FILE_BASE64 != '' }}"
       run: |
         echo "${{ secrets.ENV_FILE_BASE64 }}" > .env
         chmod 600 .env
