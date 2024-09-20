@@ -1,5 +1,5 @@
 <p align="center">
-		<img src=".github/readme-header.png" width="1280" alt="Header Image">
+		<img src=".github/img/readme-header.png" width="1280" alt="Header Image">
 </p>
 <p align="center">
 	<a href="https://github.com/serversideup/github-action-docker-swarm-deploy/blob/main/LICENSE" target="_blank"><img src="https://badgen.net/github/license/serversideup/github-action-docker-swarm-deploy" alt="License"></a>
@@ -105,6 +105,8 @@ To ensure you're validating the identity of your server, you can set the `ssh_re
     SPIN_DEPLOYMENT_ENVIRONMENT: production
 ```
 #### Setting the "ssh_remote_known_hosts" secret
+![image](.github/img/known-hosts-warning.png)
+
 You can set the `ssh_remote_known_hosts` secret by getting the public key of your server and setting it as a GitHub secret. You can run this from your **local machine** (not in GitHub Actions) to get the public key of your server:
 
 ```bash
@@ -123,7 +125,7 @@ The output will look similar to this, with hashed hostnames:
 
 Copy the output and set it as a GitHub secret (usually called `SSH_REMOTE_KNOWN_HOSTS`).
 
-![image](https://getspin.pro/images/docs/gha-secrets.png)
+![image](.github/img/secrets.png)
 
 #### Validate the known hosts file
 If you need to validate the known hosts file, you can save it in a file on your local machine and attempt to SSH into your server with it:
