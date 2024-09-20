@@ -109,14 +109,21 @@ runs:
     - name: Load .env file and set variables
       if: "${{ inputs.env_file_base64 != '' }}"
       run: |
+        # Decode the base64 encoded .env file and save it
         echo "${{ inputs.env_file_base64 }}" | base64 -d > .env
+        # Set appropriate permissions for the .env file
         chmod 600 .env
+
+        # Debug: Output the contents of the .env file if debug mode is enabled
         if [[ "$ACTIONS_STEP_DEBUG" == "true" ]]; then
           echo "::debug::Contents of .env file:"
           cat .env | sed 's/^/::debug::  /'
         fi
+        
+        # First pass: Set all variables without interpolation
+        # This ensures all variables are available for the second pass
         while IFS= read -r line || [[ -n "$line" ]]; do
-          # Trim leading and trailing whitespace
+          # Remove leading and trailing whitespace
           line=$(echo "$line" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
           
           # Skip empty lines and comments
@@ -124,6 +131,30 @@ runs:
             continue
           fi
           
+          # Parse key-value pairs
+          if [[ $line =~ ^([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
+            key="${BASH_REMATCH[1]}"
+            value="${BASH_REMATCH[2]}"
+            
+            # Remove surrounding quotes if present
+            value=$(echo "$value" | sed -e 's/^"//' -e 's/"$//')
+            
+            # Export the variable to make it available for the second pass
+            export "$key=$value"
+          fi
+        done < .env
+        
+        # Second pass: Handle interpolation and set GitHub environment
+        while IFS= read -r line || [[ -n "$line" ]]; do
+          # Remove leading and trailing whitespace
+          line=$(echo "$line" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+          
+          # Skip empty lines and comments
+          if [[ -z "$line" || "$line" == \#* ]]; then
+            continue
+          fi
+          
+          # Parse key-value pairs
           if [[ $line =~ ^([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
             key="${BASH_REMATCH[1]}"
             value="${BASH_REMATCH[2]}"
@@ -132,29 +163,39 @@ runs:
             value=$(echo "$value" | sed -e 's/^"//' -e 's/"$//')
             
             # Handle variable interpolation
+            # This allows for variables to reference other variables
             if [[ $value == \$\{*\} ]]; then
-              interpolated_var="${value:2:-1}"
-              value="${!interpolated_var:-}"
+              value=$(eval echo "$value")
             fi
             
-            # Skip empty values
+            # Only process non-empty values
             if [[ -n "$value" ]]; then
+              # Mask the value to prevent it from being displayed in logs
               echo "::add-mask::$value"
+              # Set the environment variable for GitHub Actions
               echo "$key=$value" >> $GITHUB_ENV
+              # Debug: Log which variable is being set
               [[ "$ACTIONS_STEP_DEBUG" == "true" ]] && echo "::debug::Setting $key"
             fi
             
-            # Set SPIN_APP_DOMAIN if not already set
+            # Special handling for APP_URL to set SPIN_APP_DOMAIN
             if [[ "$key" == "APP_URL" && -n "$value" && -z "$SPIN_APP_DOMAIN" ]]; then
+              # Extract domain from APP_URL
               SPIN_APP_DOMAIN=$(echo "$value" | sed -E 's#^https?://##')
+              # Set SPIN_APP_DOMAIN as a GitHub environment variable
               echo "SPIN_APP_DOMAIN=$SPIN_APP_DOMAIN" >> $GITHUB_ENV
+              # Mask SPIN_APP_DOMAIN value
               echo "::add-mask::$SPIN_APP_DOMAIN"
+              # Debug: Log that SPIN_APP_DOMAIN is being set
               [[ "$ACTIONS_STEP_DEBUG" == "true" ]] && echo "::debug::Setting SPIN_APP_DOMAIN"
             fi
           elif [[ "$ACTIONS_STEP_DEBUG" == "true" ]]; then
+            # Debug: Log lines that don't match the expected format
             echo "::debug::Skipping line: $line"
           fi
         done < .env
+        
+        # Debug: Output all set environment variables if debug mode is enabled
         if [[ "$ACTIONS_STEP_DEBUG" == "true" ]]; then
           echo "::debug::Environment variables set:"
           env | sort | sed 's/^/::debug::  /'
