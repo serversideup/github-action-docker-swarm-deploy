@@ -75,7 +75,7 @@ runs:
     - name: Add SSH key.
       run: |
         # Validate SSH key format
-        if ! echo "${{ inputs.ssh_deploy_private_key }}" | ssh-keygen -lf - &>/dev/null; then
+        if ! echo "${{ inputs.ssh_deploy_private_key }}" | ssh-keygen -y -f /dev/stdin &>/dev/null; then
           echo "::error::The provided SSH private key is not in a valid format. Please check your ssh_deploy_private_key input. For more information, see the README at https://github.com/serversideup/github-action-docker-swarm-deploy"
           exit 1
         fi
