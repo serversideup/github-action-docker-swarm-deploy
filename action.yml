@@ -87,7 +87,11 @@ runs:
         
         attempt_ssh_connection() {
           local known_hosts_file="$1"
-          local ssh_options="-o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5"
+          local ssh_options="-o BatchMode=yes -o ConnectTimeout=5"
+          
+          if [[ -z "${{ inputs.ssh_remote_known_hosts }}" ]]; then
+            ssh_options+=" -o StrictHostKeyChecking=no"
+          fi
           
           [[ -n "$known_hosts_file" ]] && ssh_options+=" -o UserKnownHostsFile=$known_hosts_file"
           
