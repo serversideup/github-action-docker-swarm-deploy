@@ -85,15 +85,21 @@ runs:
       run: |
         echo "${{ inputs.ssh_remote_known_hosts }}" >> ~/.ssh/known_hosts
         chmod 644 ~/.ssh/known_hosts
+        if [[ "$ACTIONS_STEP_DEBUG" == "true" ]]; then
+          echo "::debug::Contents of ~/.ssh/known_hosts:"
+          cat ~/.ssh/known_hosts | sed 's/^/::debug::  /'
+        fi
       shell: bash
 
     - name: Use SSH keyscan to get the public key of the remote server.
       if: ${{ inputs.ssh_remote_known_hosts == '' }}
       run: |
-        echo "::warning::You may want to set ssh_remote_known_hosts as a GitHub Actions secret to improve security."
+        echo "::warning::Security Recommendation: Consider setting ssh_remote_known_hosts as a GitHub Actions secret for improved security."
         ssh-keyscan -p ${{ inputs.ssh_remote_port }} -H ${{ inputs.ssh_remote_hostname }} >> ~/.ssh/known_hosts
         chmod 644 ~/.ssh/known_hosts
-        if [[ "$ACTIONS_STEP_DEBUG" == "true" ]]; then
+        if [ ! -s ~/.ssh/known_hosts ]; then
+          echo "::error::The known_hosts file is empty. This may indicate an issue with the SSH keyscan process. Double check the SSH remote hostname and port are correct. Ensure the server is reachable from the GitHub Actions runner and that you don't have any firewall rules blocking access."
+        elif [[ "$ACTIONS_STEP_DEBUG" == "true" ]]; then
           echo "::debug::Contents of ~/.ssh/known_hosts:"
           cat ~/.ssh/known_hosts | sed 's/^/::debug::  /'
         fi
