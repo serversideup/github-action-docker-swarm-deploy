@@ -120,7 +120,7 @@ ssh -i test_key user@your-server.com
 
 If `ssh-keygen` shows key details and you can connect to your server, the key should work with this action.
 
-> [!CRITICAL]  
+> [!CAUTION]
 > In order for you to connect to your server, the user you're connecting as must have your public key in their **authorized_keys** file.
 
 To get the content of your public key, you can use the following command:
