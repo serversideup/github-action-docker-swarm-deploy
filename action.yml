@@ -128,7 +128,8 @@ runs:
     - name: Use SSH keyscan to get the public key of the remote server.
       if: ${{ inputs.ssh_remote_known_hosts == '' }}
       run: |
-        echo "::warning::Security Recommendation: Consider setting ssh_remote_known_hosts as a GitHub Actions secret for improved security."
+        echo "::warning::Consider setting \"SSH_REMOTE_KNOWN_HOSTS\" as a GitHub Actions secret for improved security.%0A%0A\
+        For more information, view the README at https://github.com/serversideup/github-action-docker-swarm-deploy"
         ssh-keyscan -p ${{ inputs.ssh_remote_port }} -H ${{ inputs.ssh_remote_hostname }} >> ~/.ssh/known_hosts
         chmod 644 ~/.ssh/known_hosts
         if [ ! -s ~/.ssh/known_hosts ]; then
