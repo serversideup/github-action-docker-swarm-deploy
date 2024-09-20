@@ -98,36 +98,20 @@ This will create two files on your desktop:
 
 To get the content of your private key, you can use the following command:
 
-```bash
-cat ~/Desktop/id_ed25519_deploy
-```
 > [!WARNING]  
 > Be sure you're not copying hidden characters or extra whitespace when copying your private key.
 
-You can test your key with the following commands:
-
 ```bash
-# Save your key to a file (delete this file after testing)
-echo "YOUR_PRIVATE_KEY" > test_key
-chmod 600 test_key
-
-# Validate the key format
-ssh-keygen -lf test_key
-
-# Try to use the key (replace user and hostname)
-ssh -i test_key user@your-server.com
+cat ~/Desktop/id_ed25519_deploy
 ```
-
-If `ssh-keygen` shows key details and you can connect to your server, the key should work with this action.
-
-> [!CAUTION]
-> In order for you to connect to your server, the user you're connecting as must have your public key in their **authorized_keys** file.
 
 To get the content of your public key, you can use the following command:
 
 ```bash
 cat ~/Desktop/id_ed25519_deploy.pub
 ```
+> [!CAUTION]
+> In order for you to connect to your server, the user you're connecting as must have your public key in their **authorized_keys** file.
 
 Copy the output and add it to the `~/.ssh/authorized_keys` file on your server for the user you're connecting as.
 
