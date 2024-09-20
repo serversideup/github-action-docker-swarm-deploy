@@ -83,24 +83,23 @@ runs:
     - name: Verify SSH Connection
       run: |
         echo "::group::Testing SSH Connection"
-        echo "::debug::Attempting to connect to ${{ inputs.ssh_remote_hostname }} on port ${{ inputs.ssh_remote_port }} as user ${{ inputs.ssh_deploy_user }}"
+        echo "Attempting to connect to ${{ inputs.ssh_remote_hostname }} on port ${{ inputs.ssh_remote_port }} as user ${{ inputs.ssh_deploy_user }}"
         
-        timeout 10s ssh -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5 \
-          -p ${{ inputs.ssh_remote_port }} ${{ inputs.ssh_deploy_user }}@${{ inputs.ssh_remote_hostname }} exit 2>/dev/null
-        
-        if [ $? -eq 0 ]; then
-          echo "::notice::SSH connection test successful"
+        if timeout 10s ssh -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5 \
+          -p ${{ inputs.ssh_remote_port }} ${{ inputs.ssh_deploy_user }}@${{ inputs.ssh_remote_hostname }} exit 2>/dev/null; then
+          echo "SSH connection test successful"
         else
-          echo "::error::SSH connection test failed. Please check the following:"
+          echo "::error::SSH CONNECTION TEST FAILED"
+          echo "::error::Please check the following:"
           echo "::error::  1. ssh_remote_hostname: ${{ inputs.ssh_remote_hostname }}"
           echo "::error::  2. ssh_remote_port: ${{ inputs.ssh_remote_port }}"
           echo "::error::  3. ssh_deploy_user: ${{ inputs.ssh_deploy_user }}"
-          echo "::error::  4. ssh_deploy_private_key: Make sure it's correctly set in your GitHub Secrets"
+          echo "::error::  4. ssh_deploy_private_key: Verify you have this set correctly in GitHub Secrets without any extra characters or whitespace"
           echo "::error::  5. Firewall settings: Ensure the specified port is open on your server"
           echo "::error::  6. Server SSH configuration: Verify it allows connections from GitHub Actions IP range"
           
           if [[ "$ACTIONS_STEP_DEBUG" == "true" ]]; then
-            echo "::group::Debug: SSH Verbose Output"
+            echo "::group::Detailed SSH Debug Output"
             ssh -vvv -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5 \
               -p ${{ inputs.ssh_remote_port }} ${{ inputs.ssh_deploy_user }}@${{ inputs.ssh_remote_hostname }} exit
             echo "::endgroup::"
