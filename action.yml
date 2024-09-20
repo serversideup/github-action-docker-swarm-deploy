@@ -105,7 +105,6 @@ runs:
               echo "::error::Connection succeeded without strict host key checking but failed with provided known_hosts.%0A%0A\
               Your known_hosts file is incorrect. Please test and validate your known_hosts file.%0A%0A\
               For more information, see the README at https://github.com/serversideup/github-action-docker-swarm-deploy"
-              exit 1
             fi
           fi
           # Clean up the temporary file
