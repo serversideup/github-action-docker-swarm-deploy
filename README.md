@@ -69,7 +69,8 @@ The following inputs are available:
 | ssh_remote_port         | The SSH port of the remote server you would like to connect to.                                  | `22`                                                 | false    |
 | stack_name              | The name of your Docker stack.                                                                   |                                                      | ⚠️ true  |
 
-### Setting "ssh_remote_known_hosts" value
+### Removing the "ssh_remote_known_hosts" warning
+![image](.github/img/known-hosts-warning.png)
 For simplicity sake, we will automatically scan the known public SSH keys of your server and attempt to make a connection. The problem with this is it opens you up to a man-in-the-middle attack.
 
 To ensure you're validating the identity of your server, you can set the `ssh_remote_known_hosts` input with the public key of your server. You can set this value to a GitHub secret like `SSH_REMOTE_KNOWN_HOSTS`:
