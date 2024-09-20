@@ -80,6 +80,39 @@ runs:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       shell: bash
 
+    - name: Verify SSH Connection
+      run: |
+        echo "::group::Testing SSH Connection"
+        echo "::debug::Attempting to connect to ${{ inputs.ssh_remote_hostname }} on port ${{ inputs.ssh_remote_port }} as user ${{ inputs.ssh_deploy_user }}"
+        
+        timeout 10s ssh -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5 \
+          -p ${{ inputs.ssh_remote_port }} ${{ inputs.ssh_deploy_user }}@${{ inputs.ssh_remote_hostname }} exit 2>/dev/null
+        
+        if [ $? -eq 0 ]; then
+          echo "::notice::SSH connection test successful"
+        else
+          echo "::error::SSH connection test failed. Please check the following:"
+          echo "::error::  1. ssh_remote_hostname: ${{ inputs.ssh_remote_hostname }}"
+          echo "::error::  2. ssh_remote_port: ${{ inputs.ssh_remote_port }}"
+          echo "::error::  3. ssh_deploy_user: ${{ inputs.ssh_deploy_user }}"
+          echo "::error::  4. ssh_deploy_private_key: Make sure it's correctly set in your GitHub Secrets"
+          echo "::error::  5. Firewall settings: Ensure the specified port is open on your server"
+          echo "::error::  6. Server SSH configuration: Verify it allows connections from GitHub Actions IP range"
+          
+          if [[ "$ACTIONS_STEP_DEBUG" == "true" ]]; then
+            echo "::group::Debug: SSH Verbose Output"
+            ssh -vvv -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5 \
+              -p ${{ inputs.ssh_remote_port }} ${{ inputs.ssh_deploy_user }}@${{ inputs.ssh_remote_hostname }} exit
+            echo "::endgroup::"
+          fi
+          
+          exit 1
+        fi
+        echo "::endgroup::"
+      shell: bash
+      env:
+        SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+
     - name: Use predefined SSH known hosts (if available).
       if: ${{ inputs.ssh_remote_known_hosts }}
       run: |
@@ -98,7 +131,7 @@ runs:
         ssh-keyscan -p ${{ inputs.ssh_remote_port }} -H ${{ inputs.ssh_remote_hostname }} >> ~/.ssh/known_hosts
         chmod 644 ~/.ssh/known_hosts
         if [ ! -s ~/.ssh/known_hosts ]; then
-          echo "::error::The known_hosts file is empty. This may indicate an issue with the SSH keyscan process. Double check the SSH remote hostname and port are correct. Ensure the server is reachable from the GitHub Actions runner and that you don't have any firewall rules blocking access."
+          echo "::error::The known_hosts file is empty. This may indicate an issue with the SSH keyscan process."
         else
           echo "::notice::SSH keys successfully added to known_hosts"
           if [[ "$ACTIONS_STEP_DEBUG" == "true" ]]; then
