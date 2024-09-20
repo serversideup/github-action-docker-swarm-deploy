@@ -1,5 +1,5 @@
 <p align="center">
-		<img src=".github/readme-header.png" width="1280" alt="Header Image">
+		<img src=".github/img/readme-header.png" width="1280" alt="Header Image">
 </p>
 <p align="center">
 	<a href="https://github.com/serversideup/github-action-docker-swarm-deploy/blob/main/LICENSE" target="_blank"><img src="https://badgen.net/github/license/serversideup/github-action-docker-swarm-deploy" alt="License"></a>
@@ -9,27 +9,8 @@
   <a href="https://serversideup.net/discord"><img alt="Discord" src="https://img.shields.io/discord/910287105714954251?color=blueviolet"></a>
 </p>
 
-# Docker Swarm Deploy with GitHub Actions
-Hi! We're [Dan](https://twitter.com/danpastori) and [Jay](https://twitter.com/jaydrogers). We're a two person team with a passion for open source products. We created [Server Side Up](https://serversideup.net) to help share what we learn.
-
-### Find us at:
-
-* 📖 [Blog](https://serversideup.net) - get the latest guides and free courses on all things web/mobile development.
-* 🙋 [Community](https://community.serversideup.net) - get friendly help from our community members.
-* 🤵‍♂️ [Get Professional Help](https://serversideup.net/get-help) - get guaranteed responses within next business day.
-* 💻 [GitHub](https://github.com/serversideup) - check out our other open source projects
-* 📫 [Newsletter](https://serversideup.net/subscribe) - skip the algorithms and get quality content right to your inbox
-* 🐥 [Twitter](https://twitter.com/serversideup) - you can also follow [Dan](https://twitter.com/danpastori) and [Jay](https://twitter.com/jaydrogers)
-* ❤️ [Sponsor Us](https://github.com/sponsors/serversideup) - please consider sponsoring us so we can create more helpful resources
-
-### Our Sponsors
-All of our software is free an open to the world. None of this can be brought to you without the financial backing of our sponsors.
-
-#### Individual Supporters
-<!-- supporters --><a href="https://github.com/deligoez"><img src="https://github.com/deligoez.png" width="40px" alt="deligoez" /></a>&nbsp;&nbsp;<a href="https://github.com/alexjustesen"><img src="https://github.com/alexjustesen.png" width="40px" alt="alexjustesen" /></a>&nbsp;&nbsp;<a href="https://github.com/jeremykenedy"><img src="https://github.com/jeremykenedy.png" width="40px" alt="jeremykenedy" /></a>&nbsp;&nbsp;<!-- supporters -->
-
-# About this project
-This is a GitHub Action intended to simplify the development experience while deploying with Docker Swarm.
+## Introduction
+This is a GitHub Action intended to simplify the deployment experience with GitHub Actions + Docker Swarm.
 
 ### Features:
 - 😃 Simple to use
@@ -40,7 +21,7 @@ This is a GitHub Action intended to simplify the development experience while de
 - 🔐 Use with private registries
 - 🏠 Use .env files for deployment
 
-# Usage
+## Usage
 Here is an example workflow:
 
 ```yml
@@ -67,7 +48,9 @@ jobs:
           md5_variable_name: "SPIN_MD5_HASH_TRAEFIK_YML"
           env_file_base64: "${{ secrets.ENV_FILE_BASE64 }}"
 ```
-### Configuration options
+## How to use the action
+
+The following inputs are available:
 
 | Parameter               | Description                                                                                     | Default                                              | Required |
 |-------------------------|--------------------------------------------------------------------------------------------------|------------------------------------------------------|----------|
@@ -85,6 +68,104 @@ jobs:
 | ssh_remote_known_hosts  | The public key of your SSH server to validate we are connecting to the right server.             |                                                      | false    |
 | ssh_remote_port         | The SSH port of the remote server you would like to connect to.                                  | `22`                                                 | false    |
 | stack_name              | The name of your Docker stack.                                                                   |                                                      | ⚠️ true  |
+
+## Working with SSH
+SSH can have a few moving parts and it's important you get this right. Here's a few pointers to ensure you have the right setup.
+
+### ssh_deploy_user
+This is the user you want to connect to your server with. This is most likely going to be `deploy` but could be different depending on your setup. It is very important that whatever user you choose, this user should have permissions to run `docker stack deploy` (without `sudo`).
+
+### ssh_remote_hostname
+This is the hostname or IP address of your server. This is most likely going to be your server's public IP address. This can be `1.2.3.4` or `myserver.example.com`.
+
+### ssh_remote_port
+This is the port of your SSH server. This is most likely going to be `22` but could be different depending on your setup. Make sure this port is accessible from GitHub Actions. You may have to allow this port through your router, firewall, or security policy with your hosting provider.
+
+### ssh_deploy_private_key
+This is the private key you use to authenticate to your server via SSH. It must be in a valid private key format. 
+
+To generate a keypair, you can use the following commands:
+
+```bash
+ssh-keygen -o -a 100 -t ed25519 -f ~/Desktop/id_ed25519_deploy -C deploy
+```
+This will create two files on your desktop. You can use `cat` to get the content of your files.
+
+> [!WARNING]  
+> Be sure you're not copying hidden characters or extra whitespaces
+
+```bash
+cat ~/Desktop/id_ed25519_deploy # Get the content of your PRIVATE key
+cat ~/Desktop/id_ed25519_deploy.pub # Get the content of your PUBLIC key
+
+## If you use macOS, you can use `pbcopy` to copy your key to your clipboard
+
+cat ~/Desktop/id_ed25519_deploy | pbcopy # Copy your private key to your clipboard
+cat ~/Desktop/id_ed25519_deploy.pub | pbcopy # Copy your public key to your clipboard
+```
+
+> [!CAUTION]
+> In order for you to connect to your server, the user you're connecting as must have your public key in their **authorized_keys** file.
+
+Copy the output and add it to the `~/.ssh/authorized_keys` file on your server for the user you're connecting as.
+
+### ssh_remote_known_hosts
+This is the public key of your SSH server to validate we are connecting to the right server. It must be in a [valid known_hosts format](https://www.ibm.com/docs/en/zos/3.1.0?topic=daemon-ssh-known-hosts-file-format).
+
+### Removing the "ssh_remote_known_hosts" warning
+![image](.github/img/known-hosts-warning.png)
+For simplicity sake, we will automatically scan the known public SSH keys of your server and attempt to make a connection. The problem with this is it opens you up to a man-in-the-middle attack.
+
+To ensure you're validating the identity of your server, you can set the `ssh_remote_known_hosts` input with the public key of your server. You can set this value to a GitHub secret like `SSH_REMOTE_KNOWN_HOSTS`:
+
+```yml
+- uses: serversideup/github-action-docker-swarm-deploy@v3
+  with:
+    registry-token: "${{ secrets.GITHUB_TOKEN }}"
+    registry-username: "${{ github.actor }}"
+    ssh_deploy_private_key: "${{ secrets.SSH_DEPLOY_PRIVATE_KEY }}"
+    ssh_remote_hostname: "${{ secrets.SSH_REMOTE_HOSTNAME }}"
+    ssh_remote_known_hosts: "${{ secrets.SSH_REMOTE_KNOWN_HOSTS }}" # Set "SSH_REMOTE_KNOWN_HOSTS" in GitHub Actions Secrets 
+    stack_name: "${{ env.PROJECT_NAME }}"
+  env:
+    SPIN_IMAGE_DOCKERFILE_PHP: "ghcr.io/${{ github.repository }}:${{ github.sha }}"
+    SPIN_DEPLOYMENT_ENVIRONMENT: production
+```
+#### Setting the "ssh_remote_known_hosts" secret
+![image](.github/img/secrets.png)
+
+You can set the `ssh_remote_known_hosts` secret by getting the public key of your server and setting it as a GitHub secret. You can run this from your **local machine** (not in GitHub Actions) to get the public key of your server:
+
+> [!NOTE]  
+> Replace `myserver.example.com` with the hostname of your server. You can also change the port by changing `-p 22` to your desired port.
+
+```bash
+ssh-keyscan -p 22 -H myserver.example.com 2>/dev/null | sort -u
+```
+
+The output will look similar to this, with hashed hostnames:
+
+```
+|1|BfvcToAPMeAK0zR9FShCnP5CCaw=|ltUazkjjoIKsoBFQMF5yOTJt/Ks= ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBKIAz4U9GvgyBttgCnvi4AfBq3CdQ9XqAryrIyO1O60
+|1|J/BpMKspk0BwPAxR28Dzc7gVGgw=|RAimV4/7iS4jlmFmDAfex/nKDUQ= ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQChvNZNpcjdSXJWVdnhieQXRgBVUUwpexLz0dbDegUj68vrzXsgtrnGtf+sJlRhI6C7jBZDfxk2jXL1ASfxEQUqbvptZTG68uusD1DYx3wtb/kTqvJ3JkFuWJbt2zLyZktPrueHA9cvuquW46M6wSZN5AZddNitUZ09Bpb+dTVZkjbEDOiGoHRDj5M86e1rr/8UGNrAVZl/hckup3lfu3B3P0LKnGnMw+/DXIKvJiwVJ3OdHzyq6D/x9uNgcOUA7UPgUbV30gyFtWr2Az6Vn/ZolDOGasK9iI5WjvBdXwyWNwEnnR539RutiwbS/XTnb0Jj/fFS5NM2/AM3nCT37D4uQA7aJFka7keUTJZJIVanziz9Ty76lloweLDKHN2CyvUijjSx5HaqV9Dr2nTefTPPvzz1D9xU0WJX8KC77Wcu8qEjqSwNihJqucXQvq4xeBZ85OGPbvzAFYqZdjynzVsLP50E7kmdaW3VJx88hbg+vyXrJD1urcOVPNtGoMpN2Mc=
+|1|cYUT42KbDx+rQD0YSpKgDxbFWBc=|D13n4gWdMyJ+C2nifoEEeFmezmE= ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBN7wgADkhTHi7WER2pCZ5/10HBmhSIAq9zS1rWiBG5A8t2ATh5QnJ17XtPKXEJGPH8nogry/bZ+WKxI4zojGD+Q=
+```
+
+Copy the output and set it as a GitHub secret (usually called `SSH_REMOTE_KNOWN_HOSTS`).
+
+![image](.github/img/secrets.png)
+
+#### Validate the known hosts file
+If you need to validate the known hosts file, you can save it in a file on your local machine and attempt to SSH into your server with it:
+
+```bash
+ssh -p 22 -i /path/to/test_known_hosts_file myserver.example.com
+```
+
+If you cannot connect from your local machine, then you know there is an issue with the known hosts file itself.
+
+## Advanced Usage
+We also have some helpful features for our power users out there.
 
 ### Getting the MD5 Checksum of a file
 We include an optional input to get the MD5 checksum of a file. This is useful if you're working with Docker Configs and you only want the service to update if the file has changed. You just need to set the following inputs (a full example is available at the top of this document):
@@ -138,7 +219,71 @@ services:
       - DB_PASSWORD=${{ env.DB_PASSWORD }}
 ```
 
-### Security Disclosures
-If you find a security vulnerability, please let us know as soon as possible.
+## Resources
+- **[Discord](https://serversideup.net/discord)** for friendly support from the community and the team.
+- **[GitHub](https://github.com/serversideup/github-action-docker-swarm-deploy)** for source code, bug reports, and project management.
+- **[Get Professional Help](https://serversideup.net/professional-support)** - Get video + screen-sharing help directly from the core contributors.
 
-[View Our Responsible Disclosure Policy →](https://www.notion.so/Responsible-Disclosure-Policy-421a6a3be1714d388ebbadba7eebbdc8)
+## Contributing
+As an open-source project, we strive for transparency and collaboration in our development process. We greatly appreciate any contributions members of our community can provide. Whether you're fixing bugs, proposing features, improving documentation, or spreading awareness - your involvement strengthens the project. Please review our [contribution guidelines](https://serversideup.net/open-source/github-action-docker-swarm-deploy/docs/getting-started/contributing) and [code of conduct](./.github/code_of_conduct.md) to understand how we work together respectfully.
+
+- **Bug Report**: If you're experiencing an issue while using this action, please [create an issue](https://github.com/serversideup/github-action-docker-swarm-deploy/issues/new/choose).
+- **Feature Request**: Make this project better by [submitting a feature request](https://github.com/serversideup/github-action-docker-swarm-deploy/issues/new/choose).
+- **Documentation**: Improve our documentation by [submitting a documentation change](./README.md).
+- **Community Support**: Help others on [Discord](https://serversideup.net/discord).
+- **Security Report**: Report critical security issues via [our responsible disclosure policy](https://www.notion.so/Responsible-Disclosure-Policy-421a6a3be1714d388ebbadba7eebbdc8).
+
+Need help getting started? Join our Discord community and we'll help you out!
+
+<a href="https://serversideup.net/discord"><img src="https://serversideup.net/wp-content/themes/serversideup/images/open-source/join-discord.svg" title="Join Discord"></a>
+
+## Our Sponsors
+All of our software is free an open to the world. None of this can be brought to you without the financial backing of our sponsors.
+
+<p align="center"><a href="https://github.com/sponsors/serversideup"><img src="https://521public.s3.amazonaws.com/serversideup/sponsors/sponsor-box.png" alt="Sponsors"></a></p>
+
+#### Bronze Sponsors
+<!-- bronze -->No bronze sponsors yet. <a href="https://github.com/sponsors/serversideup">Become a sponsor →</a><!-- bronze -->
+
+#### Individual Supporters
+<!-- supporters --><a href="https://github.com/GeekDougle"><img src="https://github.com/GeekDougle.png" width="40px" alt="GeekDougle" /></a>&nbsp;&nbsp;<a href="https://github.com/JQuilty"><img src="https://github.com/JQuilty.png" width="40px" alt="JQuilty" /></a>&nbsp;&nbsp;<!-- supporters -->
+
+## About Us
+We're [Dan](https://twitter.com/danpastori) and [Jay](https://twitter.com/jaydrogers) - a two person team with a passion for open source products. We created [Server Side Up](https://serversideup.net) to help share what we learn.
+
+<div align="center">
+
+| <div align="center">Dan Pastori</div>                  | <div align="center">Jay Rogers</div>                                 |
+| ----------------------------- | ------------------------------------------ |
+| <div align="center"><a href="https://twitter.com/danpastori"><img src="https://serversideup.net/wp-content/uploads/2023/08/dan.jpg" title="Dan Pastori" width="150px"></a><br /><a href="https://twitter.com/danpastori"><img src="https://serversideup.net/wp-content/themes/serversideup/images/open-source/twitter.svg" title="Twitter" width="24px"></a><a href="https://github.com/danpastori"><img src="https://serversideup.net/wp-content/themes/serversideup/images/open-source/github.svg" title="GitHub" width="24px"></a></div>                        | <div align="center"><a href="https://twitter.com/jaydrogers"><img src="https://serversideup.net/wp-content/uploads/2023/08/jay.jpg" title="Jay Rogers" width="150px"></a><br /><a href="https://twitter.com/jaydrogers"><img src="https://serversideup.net/wp-content/themes/serversideup/images/open-source/twitter.svg" title="Twitter" width="24px"></a><a href="https://github.com/jaydrogers"><img src="https://serversideup.net/wp-content/themes/serversideup/images/open-source/github.svg" title="GitHub" width="24px"></a></div>                                       |
+
+</div>
+
+### Find us at:
+
+* **📖 [Blog](https://serversideup.net)** - Get the latest guides and free courses on all things web/mobile development.
+* **🙋 [Community](https://community.serversideup.net)** - Get friendly help from our community members.
+* **🤵‍♂️ [Get Professional Help](https://serversideup.net/professional-support)** - Get video + screen-sharing support from the core contributors.
+* **💻 [GitHub](https://github.com/serversideup)** - Check out our other open source projects.
+* **📫 [Newsletter](https://serversideup.net/subscribe)** - Skip the algorithms and get quality content right to your inbox.
+* **🐥 [Twitter](https://twitter.com/serversideup)** - You can also follow [Dan](https://twitter.com/danpastori) and [Jay](https://twitter.com/jaydrogers).
+* **❤️ [Sponsor Us](https://github.com/sponsors/serversideup)** - Please consider sponsoring us so we can create more helpful resources.
+
+## Our products
+If you appreciate this project, be sure to check out our other projects.
+
+### ⚡️ Starter Kits
+- **[Spin Pro](https://getspin.pro)**: Laravel Sail alternative for running Docker from development → production.
+
+### 📚 Books
+- **[The Ultimate Guide to Building APIs & SPAs](https://serversideup.net/ultimate-guide-to-building-apis-and-spas-with-laravel-and-nuxt3/)**: Build web & mobile apps from the same codebase.
+- **[Building Multi-Platform Browser Extensions](https://serversideup.net/building-multi-platform-browser-extensions/)**: Ship extensions to all browsers from the same codebase.
+
+### 🛠️ Software-as-a-Service
+- **[Bugflow](https://bugflow.io/)**: Get visual bug reports directly in GitHub, GitLab, and more.
+- **[SelfHost Pro](https://selfhostpro.com/)**: Connect Stripe or Lemonsqueezy to a private docker registry for self-hosted apps.
+
+### 🌍 Open Source
+- **[AmplitudeJS](https://521dimensions.com/open-source/amplitudejs)**: Open-source HTML5 & JavaScript Web Audio Library.
+- **[Spin](https://serversideup.net/open-source/spin/)**: Laravel Sail alternative for running Docker from development → production.
+- **[Financial Freedom](https://github.com/serversideup/financial-freedom)**: Open source alternative to Mint, YNAB, & Monarch Money.

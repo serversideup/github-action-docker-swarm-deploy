@@ -75,24 +75,107 @@ runs:
     - name: Add SSH key.
       run: |
         ssh-agent -a $SSH_AUTH_SOCK > /dev/null
-        echo "${{ inputs.ssh_deploy_private_key }}" | tr -d '\r' | ssh-add -
+        if ! echo "${{ inputs.ssh_deploy_private_key }}" | tr -d '\r' | ssh-add - 2>/dev/null; then
+          echo "::error::The provided SSH private key is not in a valid format. Please check your ssh_deploy_private_key input. For more information, see the [github-action-docker-swarm-deploy REA]"
+          exit 1
+        fi
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       shell: bash
 
-    - name: Use predefined SSH known hosts (if available).
+    - name: Verify SSH Connection
+      run: |
+        echo "::group::Validating SSH Connection"
+        echo "Attempting to connect to ${{ inputs.ssh_remote_hostname }} on port ${{ inputs.ssh_remote_port }} as user ${{ inputs.ssh_deploy_user }}"
+        
+        attempt_ssh_connection() {
+          local ssh_options="$1"
+          timeout 10s ssh $ssh_options -p ${{ inputs.ssh_remote_port }} ${{ inputs.ssh_deploy_user }}@${{ inputs.ssh_remote_hostname }} exit 2>/dev/null
+        }
+        
+        connection_successful=false
+        temp_known_hosts_file=~/.ssh/temp_known_hosts
+        
+        # If known_hosts is provided, try to use it
+        if [[ -n "${{ inputs.ssh_remote_known_hosts }}" ]]; then
+          echo "${{ inputs.ssh_remote_known_hosts }}" > "$temp_known_hosts_file"
+          if attempt_ssh_connection "-o BatchMode=yes -o ConnectTimeout=5 -o UserKnownHostsFile=$temp_known_hosts_file"; then
+            echo "SSH connection successful with provided known_hosts"
+            connection_successful=true
+          else
+            echo "::warning::Our first attempt to connect to your server failed. Let's try again without strict host key checking..."
+            if attempt_ssh_connection "-o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=no"; then
+              echo "::error::Connection succeeded without strict host key checking but failed with provided known_hosts.%0A%0A\
+              Your known_hosts file is incorrect. Please test and validate your known_hosts file.%0A%0A\
+              For more information see the serversideup/github-action-docker-swarm-deploy README."
+              exit 1
+            fi
+          fi
+          # Clean up the temporary file
+          rm -f "$temp_known_hosts_file"
+        else
+          if attempt_ssh_connection "-o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=no"; then
+            echo "SSH connection successful"
+            connection_successful=true
+          fi
+        fi
+        
+        if $connection_successful; then
+          echo "::endgroup::"
+          exit 0
+        fi
+        
+        echo "::error::SSH CONNECTION FAILED%0A%0A\
+        Please double check the following (some values are masked for security reasons):%0A\
+        1. ssh_remote_hostname: ${{ inputs.ssh_remote_hostname }}%0A\
+        2. ssh_remote_port: ${{ inputs.ssh_remote_port }}%0A\
+        3. ssh_deploy_user: ${{ inputs.ssh_deploy_user }}%0A\
+        4. ssh_deploy_private_key: Verify it's set correctly in GitHub Secrets%0A\
+        5. The ${{ inputs.ssh_deploy_user }} user on your server must have your public key added to the authorized_keys file%0A\  
+        6. Firewall settings: Ensure the specified port is allowed%0A\
+        7. Server SSH configuration: Verify it allows connections from GitHub Actions IP range%0A\
+        8. If provided, verify ssh_remote_known_hosts is correct and up-to-date%0A%0A\
+        For more information see the serversideup/github-action-docker-swarm-deploy README."
+        
+        if [[ "$ACTIONS_STEP_DEBUG" == "true" ]]; then
+          echo "::group::Detailed SSH Debug Output"
+          ssh -vvv -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5 \
+            -p ${{ inputs.ssh_remote_port }} ${{ inputs.ssh_deploy_user }}@${{ inputs.ssh_remote_hostname }} exit
+          echo "::endgroup::"
+        fi
+        
+        echo "::endgroup::"
+        exit 1
+      shell: bash
+      env:
+        SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+
+    - name: If provided, use the known_hosts file.
       if: ${{ inputs.ssh_remote_known_hosts }}
       run: |
         echo "${{ inputs.ssh_remote_known_hosts }}" >> ~/.ssh/known_hosts
         chmod 644 ~/.ssh/known_hosts
+        if [[ "$ACTIONS_STEP_DEBUG" == "true" ]]; then
+          echo "::debug::Contents of ~/.ssh/known_hosts:"
+          cat ~/.ssh/known_hosts | sed 's/^/::debug::  /'
+        fi
       shell: bash
 
-    - name: Use SSH keyscan to get the public key of the remote server.
-      if: ${{ inputs.ssh_remote_known_hosts }} = ''
+    - name: If no known_hosts file is provided, use ssh-keyscan to get the public key of the remote server.
+      if: ${{ inputs.ssh_remote_known_hosts == '' }}
       run: |
-        echo "::warning::You may want to set ssh_remote_known_hosts as a GitHub Actions secret to improve security."
+        echo "::warning::Consider setting \"SSH_REMOTE_KNOWN_HOSTS\" as a GitHub Actions secret for improved security.%0A%0A\
+        For more information see the serversideup/github-action-docker-swarm-deploy README."
         ssh-keyscan -p ${{ inputs.ssh_remote_port }} -H ${{ inputs.ssh_remote_hostname }} >> ~/.ssh/known_hosts
         chmod 644 ~/.ssh/known_hosts
+        if [ ! -s ~/.ssh/known_hosts ]; then
+          echo "::error::The known_hosts file is empty. This may indicate an issue with the SSH keyscan process."
+        else
+          if [[ "$ACTIONS_STEP_DEBUG" == "true" ]]; then
+            echo "::notice::Debug: Contents of ~/.ssh/known_hosts:"
+            cat ~/.ssh/known_hosts | sed 's/^/::notice::Debug:   /'
+          fi
+        fi
       shell: bash
 
     - name: Login to registry. (${{ inputs.registry }})
@@ -105,52 +188,99 @@ runs:
     - name: Load .env file and set variables
       if: "${{ inputs.env_file_base64 != '' }}"
       run: |
+        # Decode the base64 encoded .env file and save it
         echo "${{ inputs.env_file_base64 }}" | base64 -d > .env
+        # Set appropriate permissions for the .env file
         chmod 600 .env
+
+        # Debug: Output the contents of the .env file if debug mode is enabled
         if [[ "$ACTIONS_STEP_DEBUG" == "true" ]]; then
           echo "::debug::Contents of .env file:"
           cat .env | sed 's/^/::debug::  /'
         fi
+        
+        # First pass: Set all variables without interpolation
+        # This ensures all variables are available for the second pass
         while IFS= read -r line || [[ -n "$line" ]]; do
-          if [[ $line =~ ^[A-Za-z_][A-Za-z0-9_]*= ]]; then
-            key="${line%%=*}"
-            value="${line#*=}"
+          # Remove leading and trailing whitespace
+          line=$(echo "$line" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+          
+          # Skip empty lines and comments
+          if [[ -z "$line" || "$line" == \#* ]]; then
+            continue
+          fi
+          
+          # Parse key-value pairs
+          if [[ $line =~ ^([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
+            key="${BASH_REMATCH[1]}"
+            value="${BASH_REMATCH[2]}"
+            
+            # Remove surrounding quotes if present
+            value=$(echo "$value" | sed -e 's/^"//' -e 's/"$//')
+            
+            # Export the variable to make it available for the second pass
+            export "$key=$value"
+          fi
+        done < .env
+        
+        # Second pass: Handle interpolation and set GitHub environment
+        while IFS= read -r line || [[ -n "$line" ]]; do
+          # Remove leading and trailing whitespace
+          line=$(echo "$line" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+          
+          # Skip empty lines and comments
+          if [[ -z "$line" || "$line" == \#* ]]; then
+            continue
+          fi
+          
+          # Parse key-value pairs
+          if [[ $line =~ ^([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
+            key="${BASH_REMATCH[1]}"
+            value="${BASH_REMATCH[2]}"
+            
+            # Remove surrounding quotes if present
+            value=$(echo "$value" | sed -e 's/^"//' -e 's/"$//')
+            
+            # Handle variable interpolation
+            # This allows for variables to reference other variables
+            if [[ $value == \$\{*\} ]]; then
+              value=$(eval echo "$value")
+            fi
+            
+            # Only process non-empty values
             if [[ -n "$value" ]]; then
+              # Mask the value to prevent it from being displayed in logs
               echo "::add-mask::$value"
+              # Set the environment variable for GitHub Actions
               echo "$key=$value" >> $GITHUB_ENV
+              # Debug: Log which variable is being set
               [[ "$ACTIONS_STEP_DEBUG" == "true" ]] && echo "::debug::Setting $key"
-              
-              # Set SPIN_APP_DOMAIN if not already set
-              if [[ "$key" == "APP_URL" && -z "$SPIN_APP_DOMAIN" ]]; then
-                SPIN_APP_DOMAIN=$(echo "$value" | sed -E 's#^https?://##')
-                if [[ -n "$SPIN_APP_DOMAIN" ]]; then
-                  echo "SPIN_APP_DOMAIN=$SPIN_APP_DOMAIN" >> $GITHUB_ENV
-                  echo "::add-mask::$SPIN_APP_DOMAIN"
-                  [[ "$ACTIONS_STEP_DEBUG" == "true" ]] && echo "::debug::Setting SPIN_APP_DOMAIN"
-                fi
-              fi
-            else
-              [[ "$ACTIONS_STEP_DEBUG" == "true" ]] && echo "::debug::Skipping empty value for $key"
+            fi
+            
+            # Special handling for APP_URL to set SPIN_APP_DOMAIN
+            if [[ "$key" == "APP_URL" && -n "$value" && -z "$SPIN_APP_DOMAIN" ]]; then
+              # Extract domain from APP_URL
+              SPIN_APP_DOMAIN=$(echo "$value" | sed -E 's#^https?://##')
+              # Set SPIN_APP_DOMAIN as a GitHub environment variable
+              echo "SPIN_APP_DOMAIN=$SPIN_APP_DOMAIN" >> $GITHUB_ENV
+              # Mask SPIN_APP_DOMAIN value
+              echo "::add-mask::$SPIN_APP_DOMAIN"
+              # Debug: Log that SPIN_APP_DOMAIN is being set
+              [[ "$ACTIONS_STEP_DEBUG" == "true" ]] && echo "::debug::Setting SPIN_APP_DOMAIN"
             fi
           elif [[ "$ACTIONS_STEP_DEBUG" == "true" ]]; then
+            # Debug: Log lines that don't match the expected format
             echo "::debug::Skipping line: $line"
           fi
         done < .env
+        
+        # Debug: Output all set environment variables if debug mode is enabled
         if [[ "$ACTIONS_STEP_DEBUG" == "true" ]]; then
           echo "::debug::Environment variables set:"
           env | sort | sed 's/^/::debug::  /'
         fi
       shell: bash
-
-    - name: Debug - List available environment variables
-      if: ${{ env.ACTIONS_STEP_DEBUG == 'true' }}
-      run: |
-        echo "::debug::Available environment variables:"
-        env | cut -d= -f1 | sort | while read -r var; do
-          echo "::debug::  - $var"
-        done
-      shell: bash
-
+    
     - name: Run Docker Stack deployment via SSH.
       run: |
         docker --log-level ${{ env.ACTIONS_STEP_DEBUG == 'true' && 'debug' || inputs.log_level }} -H ssh://${{ inputs.ssh_deploy_user }}@${{ inputs.ssh_remote_hostname }}:${{ inputs.ssh_remote_port }} \
