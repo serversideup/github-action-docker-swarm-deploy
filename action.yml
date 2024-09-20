@@ -76,8 +76,7 @@ runs:
       run: |
         ssh-agent -a $SSH_AUTH_SOCK > /dev/null
         if ! echo "${{ inputs.ssh_deploy_private_key }}" | tr -d '\r' | ssh-add - 2>/dev/null; then
-          echo "::error::The provided SSH private key is not in a valid format. Please check your ssh_deploy_private_key input."
-          echo "::notice::For more information, see the [github-action-docker-swarm-deploy README](https://github.com/serversideup/github-action-docker-swarm-deploy)"
+          echo "::error::The provided SSH private key is not in a valid format. Please check your ssh_deploy_private_key input. For more information see the serversideup/github-action-docker-swarm-deploy README."
           exit 1
         fi
       env:
@@ -106,9 +105,9 @@ runs:
           else
             echo "::warning::Our first attempt to connect to your server failed. Let's try again without strict host key checking..."
             if attempt_ssh_connection "-o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=no"; then
-              echo "::error::Connection succeeded without strict host key checking but failed with provided known_hosts."
-              echo "::notice::Your known_hosts file is incorrect. Please test and validate your known_hosts file."
-              echo "::notice::For more information, see the [github-action-docker-swarm-deploy README](https://github.com/serversideup/github-action-docker-swarm-deploy)"
+              echo "::error::Connection succeeded without strict host key checking but failed with provided known_hosts.%0A%0A\
+              Your known_hosts file is incorrect. Please test and validate your known_hosts file.%0A%0A\
+              For more information see the serversideup/github-action-docker-swarm-deploy README.
               exit 1
             fi
           fi
@@ -164,8 +163,8 @@ runs:
     - name: If no known_hosts file is provided, use ssh-keyscan to get the public key of the remote server.
       if: ${{ inputs.ssh_remote_known_hosts == '' }}
       run: |
-        echo "::warning::Consider setting \"SSH_REMOTE_KNOWN_HOSTS\" as a GitHub Actions secret for improved security."
-        echo "::notice::For more information, see the [github-action-docker-swarm-deploy README](https://github.com/serversideup/github-action-docker-swarm-deploy)"
+        echo "::warning::Consider setting \"SSH_REMOTE_KNOWN_HOSTS\" as a GitHub Actions secret for improved security.%0A%0A\
+        For more information see the serversideup/github-action-docker-swarm-deploy README."
         ssh-keyscan -p ${{ inputs.ssh_remote_port }} -H ${{ inputs.ssh_remote_hostname }} >> ~/.ssh/known_hosts
         chmod 644 ~/.ssh/known_hosts
         if [ ! -s ~/.ssh/known_hosts ]; then
