@@ -144,7 +144,7 @@ runs:
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
 
-    - name: Use predefined SSH known hosts (if available).
+    - name: If provided, use the known_hosts file.
       if: ${{ inputs.ssh_remote_known_hosts }}
       run: |
         echo "${{ inputs.ssh_remote_known_hosts }}" >> ~/.ssh/known_hosts
@@ -155,7 +155,7 @@ runs:
         fi
       shell: bash
 
-    - name: Use SSH keyscan to get the public key of the remote server.
+    - name: If no known_hosts file is provided, use ssh-keyscan to get the public key of the remote server.
       if: ${{ inputs.ssh_remote_known_hosts == '' }}
       run: |
         echo "::warning::Consider setting \"SSH_REMOTE_KNOWN_HOSTS\" as a GitHub Actions secret for improved security.%0A%0A\
