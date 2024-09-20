@@ -89,7 +89,7 @@ To ensure you're validating the identity of your server, you can set the `ssh_re
     SPIN_DEPLOYMENT_ENVIRONMENT: production
 ```
 #### Setting the "ssh_remote_known_hosts" secret
-![image](.github/img/known-hosts-warning.png)
+![image](.github/img/secrets.png)
 
 You can set the `ssh_remote_known_hosts` secret by getting the public key of your server and setting it as a GitHub secret. You can run this from your **local machine** (not in GitHub Actions) to get the public key of your server:
 
