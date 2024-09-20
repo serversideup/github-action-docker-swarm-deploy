@@ -112,19 +112,15 @@ runs:
           exit 0
         fi
         
-        echo "::error::SSH CONNECTION FAILED. See job summary for details."
-        
-        cat << EOF >> $GITHUB_STEP_SUMMARY
-        ## SSH CONNECTION FAILED
-        Please check:
-        1. ssh_remote_hostname: ${{ inputs.ssh_remote_hostname }}
-        2. ssh_remote_port: ${{ inputs.ssh_remote_port }}
-        3. ssh_deploy_user: ${{ inputs.ssh_deploy_user }}
-        4. ssh_deploy_private_key: Verify it's set correctly in GitHub Secrets
-        5. Firewall settings: Ensure the specified port is allowed
-        6. Server SSH configuration: Verify it allows connections from GitHub Actions IP range
-        7. If provided, verify ssh_remote_known_hosts is correct and up-to-date
-        EOF
+        echo "::error::SSH CONNECTION FAILED%0A%0A\
+        Please check:%0A\
+        1. ssh_remote_hostname: ${{ inputs.ssh_remote_hostname }}%0A\
+        2. ssh_remote_port: ${{ inputs.ssh_remote_port }}%0A\
+        3. ssh_deploy_user: ${{ inputs.ssh_deploy_user }}%0A\
+        4. ssh_deploy_private_key: Verify it's set correctly in GitHub Secrets%0A\
+        5. Firewall settings: Ensure the specified port is allowed%0A\
+        6. Server SSH configuration: Verify it allows connections from GitHub Actions IP range%0A\
+        7. If provided, verify ssh_remote_known_hosts is correct and up-to-date"
         
         if [[ "$ACTIONS_STEP_DEBUG" == "true" ]]; then
           echo "::group::Detailed SSH Debug Output"
