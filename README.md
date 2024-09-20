@@ -69,6 +69,21 @@ The following inputs are available:
 | ssh_remote_port         | The SSH port of the remote server you would like to connect to.                                  | `22`                                                 | false    |
 | stack_name              | The name of your Docker stack.                                                                   |                                                      | ⚠️ true  |
 
+## Working with SSH
+SSH can have a few moving parts and it's important you get this right. Here's a few pointers to ensure you have the right setup.
+
+### ssh_deploy_user
+This is the user you want to connect to your server with. This is most likely going to be `deploy` but could be different depending on your setup. It is very important that whatever user you choose, this user should have permissions to run `docker stack deploy` (without `sudo`).
+
+### ssh_remote_hostname
+This is the hostname or IP address of your server. This is most likely going to be your server's public IP address. This can be `1.2.3.4` or `myserver.example.com`.
+
+### ssh_remote_port
+This is the port of your SSH server. This is most likely going to be `22` but could be different depending on your setup. Make sure this port is accessible from GitHub Actions. You may have to allow this port through your router, firewall, or security policy with your hosting provider.
+
+### ssh_remote_known_hosts
+This is the public key of your SSH server to validate we are connecting to the right server. It must be in a [valid known_hosts format](https://www.ibm.com/docs/en/zos/3.1.0?topic=daemon-ssh-known-hosts-file-format).
+
 ### Removing the "ssh_remote_known_hosts" warning
 ![image](.github/img/known-hosts-warning.png)
 For simplicity sake, we will automatically scan the known public SSH keys of your server and attempt to make a connection. The problem with this is it opens you up to a man-in-the-middle attack.
@@ -82,7 +97,7 @@ To ensure you're validating the identity of your server, you can set the `ssh_re
     registry-username: "${{ github.actor }}"
     ssh_deploy_private_key: "${{ secrets.SSH_DEPLOY_PRIVATE_KEY }}"
     ssh_remote_hostname: "${{ secrets.SSH_REMOTE_HOSTNAME }}"
-    ssh_remote_known_hosts: "${{ secrets.SSH_REMOTE_KNOWN_HOSTS }}"
+    ssh_remote_known_hosts: "${{ secrets.SSH_REMOTE_KNOWN_HOSTS }}" # Set "SSH_REMOTE_KNOWN_HOSTS" in GitHub Actions Secrets 
     stack_name: "${{ env.PROJECT_NAME }}"
   env:
     SPIN_IMAGE_DOCKERFILE_PHP: "ghcr.io/${{ github.repository }}:${{ github.sha }}"

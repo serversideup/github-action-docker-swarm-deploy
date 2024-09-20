@@ -74,6 +74,12 @@ runs:
 
     - name: Add SSH key.
       run: |
+        # Validate SSH key format
+        if ! echo "${{ inputs.ssh_deploy_private_key }}" | ssh-keygen -lf - &>/dev/null; then
+          echo "::error::The provided SSH private key is not in a valid format. Please check your ssh_deploy_private_key input."
+          exit 1
+        fi
+
         ssh-agent -a $SSH_AUTH_SOCK > /dev/null
         echo "${{ inputs.ssh_deploy_private_key }}" | tr -d '\r' | ssh-add -
       env:
