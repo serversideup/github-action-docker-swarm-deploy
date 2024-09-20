@@ -85,18 +85,48 @@ runs:
         echo "::group::Validating SSH Connection"
         echo "Attempting to connect to ${{ inputs.ssh_remote_hostname }} on port ${{ inputs.ssh_remote_port }} as user ${{ inputs.ssh_deploy_user }}"
         
-        if timeout 10s ssh -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5 \
-          -p ${{ inputs.ssh_remote_port }} ${{ inputs.ssh_deploy_user }}@${{ inputs.ssh_remote_hostname }} exit 2>/dev/null; then
-          echo "SSH connection test successful"
-        else
+        connection_successful=false
+        
+        # Function to attempt SSH connection
+        attempt_ssh_connection() {
+          timeout 10s ssh -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5 \
+            -p ${{ inputs.ssh_remote_port }} ${{ inputs.ssh_deploy_user }}@${{ inputs.ssh_remote_hostname }} exit 2>/dev/null
+        }
+        
+        # Attempt connection with provided known_hosts if it exists
+        if [[ -n "${{ inputs.ssh_remote_known_hosts }}" ]]; then
+          echo "Using provided known_hosts..."
+          echo "${{ inputs.ssh_remote_known_hosts }}" > ~/.ssh/temp_known_hosts
+          if SSH_KNOWN_HOSTS_FILE=~/.ssh/temp_known_hosts attempt_ssh_connection; then
+            echo "SSH connection test successful with provided known_hosts"
+            connection_successful=true
+          else
+            echo "::warning::The SSH connection with the provided known_hosts file failed... Attempting to connect without known_hosts..."
+          fi
+          rm ~/.ssh/temp_known_hosts
+        fi
+        
+        # If previous attempt failed or no known_hosts provided, try without
+        if [[ "$connection_successful" != true ]]; then
+          if attempt_ssh_connection; then
+            error_message="The connection failed with your provided known_hosts file, but was successful without it.%0A"
+            error_message+="Please update your known_hosts file with the correct server public key.%0A"
+            error_message+="View the README at https://github.com/serversideup/github-action-docker-swarm-deploy"
+            echo "::error::$error_message"
+            exit 1
+          fi
+        fi
+        
+        if [[ "$connection_successful" != true ]]; then
           error_message="SSH CONNECTION FAILED%0A"
           error_message+="Please check the following:%0A"
           error_message+="1. ssh_remote_hostname: ${{ inputs.ssh_remote_hostname }}%0A"
           error_message+="2. ssh_remote_port: ${{ inputs.ssh_remote_port }}%0A"
           error_message+="3. ssh_deploy_user: ${{ inputs.ssh_deploy_user }}%0A"
-          error_message+="4. ssh_deploy_private_key: Verify you have this set correctly in GitHub Secrets without any extra characters or whitespace%0A"
+          error_message+="4. ssh_deploy_private_key: Verify it's set correctly in GitHub Secrets (no extra characters/whitespace)%0A"
           error_message+="5. Firewall settings: Ensure the specified port is allowed through your firewall%0A"
-          error_message+="6. Server SSH configuration: Verify it allows connections from GitHub Actions IP range"
+          error_message+="6. Server SSH configuration: Verify it allows connections from GitHub Actions IP range%0A"
+          error_message+="7. If provided, verify ssh_remote_known_hosts is correct and up-to-date (no extra characters/whitespace)"
           
           echo "::error::$error_message"
           
