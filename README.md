@@ -81,6 +81,56 @@ This is the hostname or IP address of your server. This is most likely going to 
 ### ssh_remote_port
 This is the port of your SSH server. This is most likely going to be `22` but could be different depending on your setup. Make sure this port is accessible from GitHub Actions. You may have to allow this port through your router, firewall, or security policy with your hosting provider.
 
+### ssh_deploy_private_key
+This is the private key you use to authenticate to your server via SSH. It must be in a valid private key format. 
+
+To generate a keypair, you can use the following commands:
+
+```bash
+ssh-keygen -o -a 100 -t ed25519 -f ~/Desktop/id_ed25519_deploy -C deploy
+```
+This will create two files on your desktop:
+
+```bash
+~/Desktop/id_ed25519_deploy # PRIVATE key
+~/Desktop/id_ed25519_deploy.pub # PUBLIC key
+```
+
+To get the content of your private key, you can use the following command:
+
+```bash
+cat ~/Desktop/id_ed25519_deploy
+```
+> [!WARNING]  
+> Be sure you're not copying hidden characters or extra whitespace when copying your private key.
+
+You can test your key with the following commands:
+
+```bash
+# Save your key to a file (delete this file after testing)
+echo "YOUR_PRIVATE_KEY" > test_key
+chmod 600 test_key
+
+# Validate the key format
+ssh-keygen -lf test_key
+
+# Try to use the key (replace user and hostname)
+ssh -i test_key user@your-server.com
+```
+
+If `ssh-keygen` shows key details and you can connect to your server, the key should work with this action.
+
+> [!CRITICAL]  
+> In order for you to connect to your server, the user you're connecting as must have your public key in their **authorized_keys** file.
+
+To get the content of your public key, you can use the following command:
+
+```bash
+cat ~/Desktop/id_ed25519_deploy.pub
+```
+
+Copy the output and add it to the `~/.ssh/authorized_keys` file on your server for the user you're connecting as.
+
 ### ssh_remote_known_hosts
 This is the public key of your SSH server to validate we are connecting to the right server. It must be in a [valid known_hosts format](https://www.ibm.com/docs/en/zos/3.1.0?topic=daemon-ssh-known-hosts-file-format).
 
@@ -136,6 +186,8 @@ ssh -p 22 -i /path/to/test_known_hosts_file myserver.example.com
 
 If you cannot connect from your local machine, then you know there is an issue with the known hosts file itself.
 
+## Advanced Usage
+We also have some helpful features for our power users out there.
 
 ### Getting the MD5 Checksum of a file
 We include an optional input to get the MD5 checksum of a file. This is useful if you're working with Docker Configs and you only want the service to update if the file has changed. You just need to set the following inputs (a full example is available at the top of this document):
