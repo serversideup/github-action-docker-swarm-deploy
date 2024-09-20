@@ -86,6 +86,55 @@ jobs:
 | ssh_remote_port         | The SSH port of the remote server you would like to connect to.                                  | `22`                                                 | false    |
 | stack_name              | The name of your Docker stack.                                                                   |                                                      | ⚠️ true  |
 
+### Setting "ssh_remote_known_hosts" value
+For simplicity sake, we will automatically scan the known public SSH keys of your server and attempt to make a connection. The problem with this is it opens you up to a man-in-the-middle attack.
+
+To ensure you're validating the identity of your server, you can set the `ssh_remote_known_hosts` input with the public key of your server. You can set this value to a GitHub secret like `SSH_REMOTE_KNOWN_HOSTS`:
+
+```yml
+- uses: serversideup/github-action-docker-swarm-deploy@v3
+  with:
+    registry-token: "${{ secrets.GITHUB_TOKEN }}"
+    registry-username: "${{ github.actor }}"
+    ssh_deploy_private_key: "${{ secrets.SSH_DEPLOY_PRIVATE_KEY }}"
+    ssh_remote_hostname: "${{ secrets.SSH_REMOTE_HOSTNAME }}"
+    ssh_remote_known_hosts: "${{ secrets.SSH_REMOTE_KNOWN_HOSTS }}"
+    stack_name: "${{ env.PROJECT_NAME }}"
+  env:
+    SPIN_IMAGE_DOCKERFILE_PHP: "ghcr.io/${{ github.repository }}:${{ github.sha }}"
+    SPIN_DEPLOYMENT_ENVIRONMENT: production
+```
+#### Setting the "ssh_remote_known_hosts" secret
+You can set the `ssh_remote_known_hosts` secret by getting the public key of your server and setting it as a GitHub secret. You can run this from your **local machine** (not in GitHub Actions) to get the public key of your server:
+
+```bash
+ssh-keyscan -p 22 -H myserver.example.com 2>/dev/null | sort -u
+```
+
+Replace `myserver.example.com` with the hostname of your server. You can also change the port by changing `-p 22` to your desired port.
+
+The output will look similar to this, with hashed hostnames:
+
+```
+|1|BfvcToAPMeAK0zR9FShCnP5CCaw=|ltUazkjjoIKsoBFQMF5yOTJt/Ks= ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBKIAz4U9GvgyBttgCnvi4AfBq3CdQ9XqAryrIyO1O60
+|1|J/BpMKspk0BwPAxR28Dzc7gVGgw=|RAimV4/7iS4jlmFmDAfex/nKDUQ= ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQChvNZNpcjdSXJWVdnhieQXRgBVUUwpexLz0dbDegUj68vrzXsgtrnGtf+sJlRhI6C7jBZDfxk2jXL1ASfxEQUqbvptZTG68uusD1DYx3wtb/kTqvJ3JkFuWJbt2zLyZktPrueHA9cvuquW46M6wSZN5AZddNitUZ09Bpb+dTVZkjbEDOiGoHRDj5M86e1rr/8UGNrAVZl/hckup3lfu3B3P0LKnGnMw+/DXIKvJiwVJ3OdHzyq6D/x9uNgcOUA7UPgUbV30gyFtWr2Az6Vn/ZolDOGasK9iI5WjvBdXwyWNwEnnR539RutiwbS/XTnb0Jj/fFS5NM2/AM3nCT37D4uQA7aJFka7keUTJZJIVanziz9Ty76lloweLDKHN2CyvUijjSx5HaqV9Dr2nTefTPPvzz1D9xU0WJX8KC77Wcu8qEjqSwNihJqucXQvq4xeBZ85OGPbvzAFYqZdjynzVsLP50E7kmdaW3VJx88hbg+vyXrJD1urcOVPNtGoMpN2Mc=
+|1|cYUT42KbDx+rQD0YSpKgDxbFWBc=|D13n4gWdMyJ+C2nifoEEeFmezmE= ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBN7wgADkhTHi7WER2pCZ5/10HBmhSIAq9zS1rWiBG5A8t2ATh5QnJ17XtPKXEJGPH8nogry/bZ+WKxI4zojGD+Q=
+```
+
+Copy the output and set it as a GitHub secret (usually called `SSH_REMOTE_KNOWN_HOSTS`).
+
+![image](https://getspin.pro/images/docs/gha-secrets.png)
+
+#### Validate the known hosts file
+If you need to validate the known hosts file, you can save it in a file on your local machine and attempt to SSH into your server with it:
+
+```bash
+ssh -p 22 -i /path/to/test_known_hosts_file myserver.example.com
+```
+
+If you cannot connect from your local machine, then you know there is an issue with the known hosts file itself.
+
+
 ### Getting the MD5 Checksum of a file
 We include an optional input to get the MD5 checksum of a file. This is useful if you're working with Docker Configs and you only want the service to update if the file has changed. You just need to set the following inputs (a full example is available at the top of this document):
 
