@@ -105,6 +105,7 @@ runs:
               echo "::error::Connection succeeded without strict host key checking but failed with provided known_hosts.%0A%0A\
               Your known_hosts file is incorrect. Please test and validate your known_hosts file.%0A%0A\
               For more information, see the README at https://github.com/serversideup/github-action-docker-swarm-deploy"
+              exit 1
             fi
           fi
           # Clean up the temporary file
@@ -122,7 +123,7 @@ runs:
         fi
         
         echo "::error::SSH CONNECTION FAILED%0A%0A\
-        Please check (some values are masked for security):%0A\
+        Please check (some values are masked for security reasons):%0A\
         1. ssh_remote_hostname: ${{ inputs.ssh_remote_hostname }}%0A\
         2. ssh_remote_port: ${{ inputs.ssh_remote_port }}%0A\
         3. ssh_deploy_user: ${{ inputs.ssh_deploy_user }}%0A\
@@ -139,6 +140,7 @@ runs:
         fi
         
         echo "::endgroup::"
+        exit 1
       shell: bash
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
