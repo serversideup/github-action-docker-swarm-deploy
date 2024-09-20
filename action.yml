@@ -122,7 +122,7 @@ runs:
         fi
         
         echo "::error::SSH CONNECTION FAILED%0A%0A\
-        Please check:%0A\
+        Please check (some values are masked for security):%0A\
         1. ssh_remote_hostname: ${{ inputs.ssh_remote_hostname }}%0A\
         2. ssh_remote_port: ${{ inputs.ssh_remote_port }}%0A\
         3. ssh_deploy_user: ${{ inputs.ssh_deploy_user }}%0A\
