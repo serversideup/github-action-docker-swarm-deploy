@@ -102,14 +102,10 @@ To get the content of your private key, you can use the following command:
 > Be sure you're not copying hidden characters or extra whitespace when copying your private key.
 
 ```bash
-cat ~/Desktop/id_ed25519_deploy
+cat ~/Desktop/id_ed25519_deploy # Get the content of your PRIVATE key
+cat ~/Desktop/id_ed25519_deploy.pub # Get the content of your PUBLIC key
 ```
 
-To get the content of your public key, you can use the following command:
-
-```bash
-cat ~/Desktop/id_ed25519_deploy.pub
-```
 > [!CAUTION]
 > In order for you to connect to your server, the user you're connecting as must have your public key in their **authorized_keys** file.
 
