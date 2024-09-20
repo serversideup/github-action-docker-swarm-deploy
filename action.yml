@@ -95,7 +95,7 @@ runs:
           error_message+="2. ssh_remote_port: ${{ inputs.ssh_remote_port }}%0A"
           error_message+="3. ssh_deploy_user: ${{ inputs.ssh_deploy_user }}%0A"
           error_message+="4. ssh_deploy_private_key: Verify you have this set correctly in GitHub Secrets without any extra characters or whitespace%0A"
-          error_message+="5. Firewall settings: Ensure the specified port is open on your server%0A"
+          error_message+="5. Firewall settings: Ensure the specified port is allowed through your firewall%0A"
           error_message+="6. Server SSH configuration: Verify it allows connections from GitHub Actions IP range"
           
           echo "::error::$error_message"
