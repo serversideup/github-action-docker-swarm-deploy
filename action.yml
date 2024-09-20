@@ -86,32 +86,38 @@ runs:
         echo "Attempting to connect to ${{ inputs.ssh_remote_hostname }} on port ${{ inputs.ssh_remote_port }} as user ${{ inputs.ssh_deploy_user }}"
         
         attempt_ssh_connection() {
-          local known_hosts_file="$1"
-          local ssh_options="-o BatchMode=yes -o ConnectTimeout=5"
-          
-          if [[ -z "${{ inputs.ssh_remote_known_hosts }}" ]]; then
-            ssh_options+=" -o StrictHostKeyChecking=no"
-          fi
-          
-          [[ -n "$known_hosts_file" ]] && ssh_options+=" -o UserKnownHostsFile=$known_hosts_file"
-          
+          local ssh_options="$1"
           timeout 10s ssh $ssh_options -p ${{ inputs.ssh_remote_port }} ${{ inputs.ssh_deploy_user }}@${{ inputs.ssh_remote_hostname }} exit 2>/dev/null
         }
         
-        if [[ -n "${{ inputs.ssh_remote_known_hosts }}" ]]; then
-          echo "${{ inputs.ssh_remote_known_hosts }}" > ~/.ssh/temp_known_hosts
-          if attempt_ssh_connection ~/.ssh/temp_known_hosts; then
-            echo "SSH connection successful with provided known_hosts"
-            echo "::endgroup::"
-            exit 0
-          fi
-          echo "::warning::SSH connection with provided known_hosts failed. Trying without..."
-          rm ~/.ssh/temp_known_hosts
-        fi        
+        connection_successful=false
+        temp_known_hosts_file=~/.ssh/temp_known_hosts
         
-        if attempt_ssh_connection; then
-          echo "SSH connection successful"
-          [[ -n "${{ inputs.ssh_remote_known_hosts }}" ]] && echo "::warning::Connection succeeded without known_hosts but failed with provided known_hosts. Please update your known_hosts file."
+        # If known_hosts is provided, try to use it
+        if [[ -n "${{ inputs.ssh_remote_known_hosts }}" ]]; then
+          echo "${{ inputs.ssh_remote_known_hosts }}" > "$temp_known_hosts_file"
+          if attempt_ssh_connection "-o BatchMode=yes -o ConnectTimeout=5 -o UserKnownHostsFile=$temp_known_hosts_file"; then
+            echo "SSH connection successful with provided known_hosts"
+            connection_successful=true
+          else
+            echo "::warning::SSH connection with provided known_hosts failed. Trying without strict host key checking..."
+            if attempt_ssh_connection "-o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=no"; then
+              echo "::error::Connection succeeded without strict host key checking but failed with provided known_hosts.%0A%0A\
+              Please update your known_hosts file to be correct.%0A%0A\
+              For more information, see the README at https://github.com/serversideup/github-action-docker-swarm-deploy."
+              exit 1
+            fi
+          fi
+          # Clean up the temporary file
+          rm -f "$temp_known_hosts_file"
+        else
+          if attempt_ssh_connection "-o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=no"; then
+            echo "SSH connection successful"
+            connection_successful=true
+          fi
+        fi
+        
+        if $connection_successful; then
           echo "::endgroup::"
           exit 0
         fi
