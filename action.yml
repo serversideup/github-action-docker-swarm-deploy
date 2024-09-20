@@ -115,16 +115,22 @@ runs:
           if [[ $line =~ ^[A-Za-z_][A-Za-z0-9_]*= ]]; then
             key="${line%%=*}"
             value="${line#*=}"
-            echo "::add-mask::$value"
-            echo "$key=$value" >> $GITHUB_ENV
-            [[ "$ACTIONS_STEP_DEBUG" == "true" ]] && echo "::debug::Setting $key"
-            
-            # Set SPIN_APP_DOMAIN if not already set
-            if [[ "$key" == "APP_URL" && -z "$SPIN_APP_DOMAIN" ]]; then
-              SPIN_APP_DOMAIN=$(echo "$value" | sed -E 's#^https?://##')
-              echo "SPIN_APP_DOMAIN=$SPIN_APP_DOMAIN" >> $GITHUB_ENV
-              echo "::add-mask::$SPIN_APP_DOMAIN"
-              [[ "$ACTIONS_STEP_DEBUG" == "true" ]] && echo "::debug::Setting SPIN_APP_DOMAIN"
+            if [[ -n "$value" ]]; then
+              echo "::add-mask::$value"
+              echo "$key=$value" >> $GITHUB_ENV
+              [[ "$ACTIONS_STEP_DEBUG" == "true" ]] && echo "::debug::Setting $key"
+              
+              # Set SPIN_APP_DOMAIN if not already set
+              if [[ "$key" == "APP_URL" && -z "$SPIN_APP_DOMAIN" ]]; then
+                SPIN_APP_DOMAIN=$(echo "$value" | sed -E 's#^https?://##')
+                if [[ -n "$SPIN_APP_DOMAIN" ]]; then
+                  echo "SPIN_APP_DOMAIN=$SPIN_APP_DOMAIN" >> $GITHUB_ENV
+                  echo "::add-mask::$SPIN_APP_DOMAIN"
+                  [[ "$ACTIONS_STEP_DEBUG" == "true" ]] && echo "::debug::Setting SPIN_APP_DOMAIN"
+                fi
+              fi
+            else
+              [[ "$ACTIONS_STEP_DEBUG" == "true" ]] && echo "::debug::Skipping empty value for $key"
             fi
           elif [[ "$ACTIONS_STEP_DEBUG" == "true" ]]; then
             echo "::debug::Skipping line: $line"
