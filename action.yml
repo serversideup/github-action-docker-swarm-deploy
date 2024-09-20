@@ -131,9 +131,10 @@ runs:
         2. ssh_remote_port: ${{ inputs.ssh_remote_port }}%0A\
         3. ssh_deploy_user: ${{ inputs.ssh_deploy_user }}%0A\
         4. ssh_deploy_private_key: Verify it's set correctly in GitHub Secrets%0A\
-        5. Firewall settings: Ensure the specified port is allowed%0A\
-        6. Server SSH configuration: Verify it allows connections from GitHub Actions IP range%0A\
-        7. If provided, verify ssh_remote_known_hosts is correct and up-to-date"
+        5. The ${{ inputs.ssh_deploy_user }} user on your server must have your public key added to the authorized_keys file%0A\  
+        6. Firewall settings: Ensure the specified port is allowed%0A\
+        7. Server SSH configuration: Verify it allows connections from GitHub Actions IP range%0A\
+        8. If provided, verify ssh_remote_known_hosts is correct and up-to-date%0A\"
         
         if [[ "$ACTIONS_STEP_DEBUG" == "true" ]]; then
           echo "::group::Detailed SSH Debug Output"
