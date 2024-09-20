@@ -139,7 +139,6 @@ runs:
         fi
         
         echo "::endgroup::"
-        exit 1
       shell: bash
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
