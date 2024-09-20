@@ -89,21 +89,18 @@ To generate a keypair, you can use the following commands:
 ```bash
 ssh-keygen -o -a 100 -t ed25519 -f ~/Desktop/id_ed25519_deploy -C deploy
 ```
-This will create two files on your desktop:
-
-```bash
-~/Desktop/id_ed25519_deploy # PRIVATE key
-~/Desktop/id_ed25519_deploy.pub # PUBLIC key
-```
-
-To get the content of your private key, you can use the following command:
+This will create two files on your desktop. You can use `cat` to get the content of your files.
 
 > [!WARNING]  
-> Be sure you're not copying hidden characters or extra whitespace when copying your private key.
+> Be sure you're not copying hidden characters or extra whitespaces
 
 ```bash
 cat ~/Desktop/id_ed25519_deploy # Get the content of your PRIVATE key
 cat ~/Desktop/id_ed25519_deploy.pub # Get the content of your PUBLIC key
+
+## If you use macOS, you can use `pbcopy` to copy your key to your clipboard
+cat ~/Desktop/id_ed25519_deploy | pbcopy # Copy your private key to your clipboard
+cat ~/Desktop/id_ed25519_deploy.pub | pbcopy # Copy your public key to your clipboard
 ```
 
 > [!CAUTION]
