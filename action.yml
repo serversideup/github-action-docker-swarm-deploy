@@ -82,14 +82,14 @@ runs:
 
     - name: Verify SSH Connection
       run: |
-        echo "::group::Testing SSH Connection"
+        echo "::group::Validating SSH Connection"
         echo "Attempting to connect to ${{ inputs.ssh_remote_hostname }} on port ${{ inputs.ssh_remote_port }} as user ${{ inputs.ssh_deploy_user }}"
         
         if timeout 10s ssh -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5 \
           -p ${{ inputs.ssh_remote_port }} ${{ inputs.ssh_deploy_user }}@${{ inputs.ssh_remote_hostname }} exit 2>/dev/null; then
           echo "SSH connection test successful"
         else
-          error_message="SSH CONNECTION TEST FAILED%0A"
+          error_message="SSH CONNECTION FAILED%0A"
           error_message+="Please check the following:%0A"
           error_message+="1. ssh_remote_hostname: ${{ inputs.ssh_remote_hostname }}%0A"
           error_message+="2. ssh_remote_port: ${{ inputs.ssh_remote_port }}%0A"
@@ -134,7 +134,6 @@ runs:
         if [ ! -s ~/.ssh/known_hosts ]; then
           echo "::error::The known_hosts file is empty. This may indicate an issue with the SSH keyscan process."
         else
-          echo "::notice::SSH keys successfully added to known_hosts"
           if [[ "$ACTIONS_STEP_DEBUG" == "true" ]]; then
             echo "::notice::Debug: Contents of ~/.ssh/known_hosts:"
             cat ~/.ssh/known_hosts | sed 's/^/::notice::Debug:   /'
