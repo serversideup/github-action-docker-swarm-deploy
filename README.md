@@ -93,11 +93,12 @@ To ensure you're validating the identity of your server, you can set the `ssh_re
 
 You can set the `ssh_remote_known_hosts` secret by getting the public key of your server and setting it as a GitHub secret. You can run this from your **local machine** (not in GitHub Actions) to get the public key of your server:
 
+> [!NOTE]  
+> Replace `myserver.example.com` with the hostname of your server. You can also change the port by changing `-p 22` to your desired port.
+
 ```bash
 ssh-keyscan -p 22 -H myserver.example.com 2>/dev/null | sort -u
 ```
-
-Replace `myserver.example.com` with the hostname of your server. You can also change the port by changing `-p 22` to your desired port.
 
 The output will look similar to this, with hashed hostnames:
 
