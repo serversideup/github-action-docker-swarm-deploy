@@ -76,7 +76,7 @@ runs:
       run: |
         ssh-agent -a $SSH_AUTH_SOCK > /dev/null
         if ! echo "${{ inputs.ssh_deploy_private_key }}" | tr -d '\r' | ssh-add - 2>/dev/null; then
-          echo "::error::The provided SSH private key is not in a valid format. Please check your ssh_deploy_private_key input. For more information see the serversideup/github-action-docker-swarm-deploy README."
+          echo "::error::The provided SSH private key is not in a valid format. Please check your ssh_deploy_private_key input. For more information, see the [github-action-docker-swarm-deploy REA]"
           exit 1
         fi
       env:
@@ -107,7 +107,7 @@ runs:
             if attempt_ssh_connection "-o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=no"; then
               echo "::error::Connection succeeded without strict host key checking but failed with provided known_hosts.%0A%0A\
               Your known_hosts file is incorrect. Please test and validate your known_hosts file.%0A%0A\
-              For more information see the serversideup/github-action-docker-swarm-deploy README.
+              For more information see the serversideup/github-action-docker-swarm-deploy README."
               exit 1
             fi
           fi
@@ -134,7 +134,8 @@ runs:
         5. The ${{ inputs.ssh_deploy_user }} user on your server must have your public key added to the authorized_keys file%0A\  
         6. Firewall settings: Ensure the specified port is allowed%0A\
         7. Server SSH configuration: Verify it allows connections from GitHub Actions IP range%0A\
-        8. If provided, verify ssh_remote_known_hosts is correct and up-to-date%0A\"
+        8. If provided, verify ssh_remote_known_hosts is correct and up-to-date%0A%0A\
+        For more information see the serversideup/github-action-docker-swarm-deploy README."
         
         if [[ "$ACTIONS_STEP_DEBUG" == "true" ]]; then
           echo "::group::Detailed SSH Debug Output"
