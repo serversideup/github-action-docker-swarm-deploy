@@ -99,6 +99,7 @@ cat ~/Desktop/id_ed25519_deploy # Get the content of your PRIVATE key
 cat ~/Desktop/id_ed25519_deploy.pub # Get the content of your PUBLIC key
 
 ## If you use macOS, you can use `pbcopy` to copy your key to your clipboard
+
 cat ~/Desktop/id_ed25519_deploy | pbcopy # Copy your private key to your clipboard
 cat ~/Desktop/id_ed25519_deploy.pub | pbcopy # Copy your public key to your clipboard
 ```
