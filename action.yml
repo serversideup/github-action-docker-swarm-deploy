@@ -243,16 +243,7 @@ runs:
           env | sort | sed 's/^/::debug::  /'
         fi
       shell: bash
-
-    - name: Debug - List available environment variables
-      if: ${{ env.ACTIONS_STEP_DEBUG == 'true' }}
-      run: |
-        echo "::debug::Available environment variables:"
-        env | cut -d= -f1 | sort | while read -r var; do
-          echo "::debug::  - $var"
-        done
-      shell: bash
-
+    
     - name: Run Docker Stack deployment via SSH.
       run: |
         docker --log-level ${{ env.ACTIONS_STEP_DEBUG == 'true' && 'debug' || inputs.log_level }} -H ssh://${{ inputs.ssh_deploy_user }}@${{ inputs.ssh_remote_hostname }}:${{ inputs.ssh_remote_port }} \
