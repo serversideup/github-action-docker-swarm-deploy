@@ -100,8 +100,8 @@ runs:
         if [ ! -s ~/.ssh/known_hosts ]; then
           echo "::error::The known_hosts file is empty. This may indicate an issue with the SSH keyscan process. Double check the SSH remote hostname and port are correct. Ensure the server is reachable from the GitHub Actions runner and that you don't have any firewall rules blocking access."
         elif [[ "$ACTIONS_STEP_DEBUG" == "true" ]]; then
-          echo "::debug::Contents of ~/.ssh/known_hosts:"
-          cat ~/.ssh/known_hosts | sed 's/^/::debug::  /'
+          echo "::notice::Debug: Contents of ~/.ssh/known_hosts:"
+          cat ~/.ssh/known_hosts | sed 's/^/::notice::Debug:   /'
         fi
       shell: bash
 
