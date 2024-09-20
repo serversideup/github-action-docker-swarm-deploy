@@ -100,7 +100,7 @@ runs:
             echo "SSH connection successful with provided known_hosts"
             connection_successful=true
           else
-            echo "::warning::SSH connection with provided known_hosts failed. Trying without strict host key checking..."
+            echo "::warning::Our first attempt to connect to your server failed. Let's try again without strict host key checking..."
             if attempt_ssh_connection "-o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=no"; then
               echo "::error::Connection succeeded without strict host key checking but failed with provided known_hosts.%0A%0A\
               Your known_hosts file is incorrect. Please test and validate your known_hosts file.%0A%0A\
