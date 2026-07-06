@@ -60,7 +60,7 @@ runs:
   steps:
 
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Set MD5 checksum (if provided)
       if: ${{ inputs.md5_file_path }}
@@ -183,7 +183,7 @@ runs:
       shell: bash
 
     - name: Login to registry. (${{ inputs.registry }})
-      uses: docker/login-action@v3
+      uses: docker/login-action@v4
       with:
         username: ${{ inputs.registry-username }}
         password: ${{ inputs.registry-password || inputs.registry-token }}
