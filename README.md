@@ -36,7 +36,7 @@ jobs:
     needs: build
     runs-on: ubuntu-24.04
     steps:
-      - uses: serversideup/github-action-docker-swarm-deploy@v3
+      - uses: serversideup/github-action-docker-swarm-deploy@v4
         with:
           ssh_deploy_private_key: "${{ secrets.SSH_DEPLOY_PRIVATE_KEY }}"
           ssh_remote_hostname: "${{ secrets.SSH_REMOTE_HOSTNAME }}"
